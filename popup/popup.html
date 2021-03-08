@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>popup</title>
+    <style>
+#app {
+    padding: 15px;
+}
+
+#app > div:not(:nth-last-child(1)) {
+    margin-bottom: 10px;
+}
+
+.hidden {
+    display: none;
+}
+
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <div>
+            <button class="switch">开启</button>
+        </div>
+        <div>
+            翻译源
+            <select class="source" name="source">
+                <option value="1">Google</option>
+                <option value="2">Baidu</option>
+                <option value="3">Bing</option>
+            </select>
+        </div>
+        <div>
+            翻译规则
+            <select class="rule" name="rule">
+                <option value="1">自动</option>
+                <option value="2">手动</option>
+            </select>
+        </div>
+    </div>
+    <script src="../lib/jquery-3.6.0.js"></script>
+    <script src="./popup.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,58 @@
+{
+    "manifest_version": 2,
+    "name": "translate",
+    "version": "1.0.0",
+    "description": "A translator for Whatsapp",
+    "icons": {
+        "16": "icons/16.png",
+        "48": "icons/48.png",
+        "128": "icons/128.png"
+    },
+    "background": {
+        "scripts": [
+            "background/background.js"
+        ],
+        "persistent": true
+    },
+    "browser_action": {
+        "default_title": "translate",
+        "default_icon": {
+            "19": "icons/19_off.png",
+            "38": "icons/38_off.png"
+        }
+    },
+    "content_scripts": [
+        {
+            "matches": [
+                "https://web.whatsapp.com/*"
+            ],
+            "css": [
+                "content/content.css"
+            ],
+            "js": [
+                "lib/jquery-3.6.0.js",
+                "content/content.js"
+            ],
+            "run_at": "document_end"
+        }
+    ],
+    "permissions": [
+        "tabs",
+        "storage",
+        "https://web.whatsapp.com/*"
+    ],
+    "homepage_url": "http://www.angusfan.cn",
+    "options_ui": {
+        "page": "options/options.html",
+        "chrome_style": true
+    },
+    "commands": {
+        "_execute_browser_action": {
+            "suggested_key": {
+                "default": "Ctrl+Shift+Q",
+                "mac": "MacCtrl+Shift+Q"
+            },
+            "description": "Opens web page of WhatsApp"
+        }
+    }
+}
