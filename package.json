@@ -1,0 +1,26 @@
+{
+  "name": "translate-for-whatsapp",
+  "version": "1.0.0",
+  "description": "A translator for WhatsApp.",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AngusFan-GH/translator-for-whatsapp.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/AngusFan-GH/translator-for-whatsapp/issues"
+  },
+  "homepage": "https://github.com/AngusFan-GH/translator-for-whatsapp#readme",
+  "devDependencies": {
+    "webpack": "^5.24.3",
+    "webpack-cli": "^4.5.0"
+  }
+}
