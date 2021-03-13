@@ -2,7 +2,7 @@
 .deploy_git/
 
 # compiled output
-/dist
+/build
 /tmp
 
 # dependencies

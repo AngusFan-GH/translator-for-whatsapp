@@ -30,7 +30,6 @@
                 "content/content.css"
             ],
             "js": [
-                "lib/jquery-3.6.0.js",
                 "content/content.js"
             ],
             "run_at": "document_end"
@@ -40,19 +39,5 @@
         "tabs",
         "storage",
         "https://web.whatsapp.com/*"
-    ],
-    "homepage_url": "http://www.angusfan.cn",
-    "options_ui": {
-        "page": "options/options.html",
-        "chrome_style": true
-    },
-    "commands": {
-        "_execute_browser_action": {
-            "suggested_key": {
-                "default": "Ctrl+Shift+Q",
-                "mac": "MacCtrl+Shift+Q"
-            },
-            "description": "Opens web page of WhatsApp"
-        }
-    }
+    ]
 }
