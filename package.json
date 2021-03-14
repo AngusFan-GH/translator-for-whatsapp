@@ -58,7 +58,8 @@
   },
   "dependencies": {
     "copy-webpack-plugin": "^6.2.1",
-    "jquery": "^3.4.1"
+    "jquery": "^3.4.1",
+    "axios": "^0.21.1"
   },
   "browserslist": {
     "development": [

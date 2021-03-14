@@ -1,114 +1,63 @@
-const HOST = 'web.whatsapp.com';
-const HREF = 'https://'.concat(HOST, '/');
-let ISINSTALLED = false;
-let WINDOWID = 0;
 
-chrome.runtime.onInstalled.addListener(({ reason }) => {
-  if (reason !== 'install') return;
-  handleInstalled();
-});
+import { BROWSER_LANGUAGES_MAP } from '../common/scripts/languages.js';
+import TRANSLATOR_MANAGER from './library/translate.js';
+import initWindow from './handle-window';
 
-chrome.browserAction.onClicked.addListener((t) => {
-  handleInstalled();
-});
+const DEFAULT_SETTINGS = {
+  languageSetting: {
+    sl: 'auto',
+    tl: BROWSER_LANGUAGES_MAP[chrome.i18n.getUILanguage()],
+    s2: 'en'
+  },
+  DefaultTranslator: 'GoogleTranslate',
+  OtherSettings: {}
+}
 
-chrome.windows.onRemoved.addListener((tabId) => {
-  if (WINDOWID !== tabId) {
-    return;
-  }
-  ISINSTALLED = false;
-  chrome.browserAction.setIcon({
-    path: {
-      19: 'icons/19_off.png',
-      38: 'icons/38_off.png',
-    },
+initWindow();
+
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.storage.sync.get((result) => {
+    let buffer = result;
+    setDefaultSettings(buffer, DEFAULT_SETTINGS);
+    chrome.storage.sync.set(buffer);
   });
-  chrome.browserAction.setBadgeText({
-    text: '',
-  });
-});
-
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  console.log(tabId, changeInfo, tab);
-  if (validUrl(changeInfo.url) && tab.windowId !== WINDOWID) {
-    console.log(123);
-    if (ISINSTALLED) {
-      chrome.tabs.remove(tabId);
-      focuseWindow();
-    } else {
-      handleInstalled();
-    }
-  }
 });
 
 chrome.runtime.onMessage.addListener((request, sender, reponse) => {
-  if (request.translateIt) {
-    console.log(request.translateIt);
-    setTimeout(() => {
-      reponse(`翻译后：${request.translateIt}`);
-    }, 1000);
+  if (request.translateMessage) {
+    TRANSLATOR_MANAGER.translate(request.translateMessage).then(result => reponse(result));
+    return true;
+  }
+  if (request.translateInput) {
+    TRANSLATOR_MANAGER.translate(request.translateInput, true).then(result => reponse(result));
+    return true;
+  }
+  if (request.setLanguageSettingByMessage) {
+    TRANSLATOR_MANAGER.detect(request.setLanguageSettingByMessage).then(e => {
+      TRANSLATOR_MANAGER.updateLanguageSetting({ s2: e });
+    });
+    return true;
+  }
+  if (request.changeDefaultTranslator) {
+    TRANSLATOR_MANAGER.updateDefaultTranslator(request.changeDefaultTranslator);
     return true;
   }
 });
 
-function validUrl(_url) {
-  return void 0 !== _url && _url.indexOf(HREF) > -1;
-}
-
-function handleInstalled() {
-  ISINSTALLED ? focuseWindow() : openWindows();
-}
-
-function setDefaultOptions() {
-  chrome.storage.sync.set({
-    isOpenedPanel: false,
-    source: 1,
-    rule: 1,
-  });
-}
-
-function openWindows() {
-  chrome.tabs.query(
-    {
-      url: ''.concat(HREF, '*'),
-    },
-    (tabs) => {
-      const tabIds = tabs.map((t) => t.id);
-      chrome.tabs.remove(tabIds, createWindow);
-    },
-  );
-}
-
-function createWindow() {
-  const heigth = 1396;
-  const width = 931;
-  const position = {
-    left: screen.availLeft + screen.availWidth / 2 - heigth / 2,
-    top: screen.availTop + screen.availHeight / 2 - width / 2,
-  };
-  chrome.windows.create({
-    url: HREF,
-    focused: true,
-    left: Math.floor(position.left),
-    top: Math.floor(position.top),
-    width: heigth,
-    height: width,
-    type: 'panel',
-  }, ({ id }) => {
-    ISINSTALLED = true;
-    WINDOWID = id;
-    chrome.browserAction.setIcon({
-      path: {
-        19: 'icons/19.png',
-        38: 'icons/38.png',
-      },
-    });
-    setDefaultOptions();
-  });
-}
-
-function focuseWindow() {
-  chrome.windows.update(WINDOWID, {
-    focused: true,
-  });
+function setDefaultSettings(result, settings) {
+  for (let i in settings) {
+    if (
+      typeof settings[i] === 'object' &&
+      !(settings[i] instanceof Array) &&
+      Object.keys(settings[i]).length > 0
+    ) {
+      if (result[i]) {
+        setDefaultSettings(result[i], settings[i]);
+      } else {
+        result[i] = settings[i];
+      }
+    } else if (result[i] === undefined) {
+      result[i] = settings[i];
+    }
+  }
 }

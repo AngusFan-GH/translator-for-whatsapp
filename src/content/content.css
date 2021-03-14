@@ -1,22 +1,49 @@
-#tfw_move_page {
-    position: fixed;
-    z-index: 1000001;
-    right: 0;
-    bottom: 0;
+#tfw_translate_btn {
+    cursor: pointer;
 
-    width: 400px;
-    height: 400px;
-
-    user-select: none;
-
-    border: 1px solid;
-    background: white;
+    color: var(--message-primary);
 }
-#tfw_move_title {
-    line-height: 40px;
 
-    cursor: move;
-    text-align: center;
+#tfw_translate_result {
+    margin-top: 10px;
+    padding: 6px 0 8px;
 
-    border-bottom: 1px solid;
+    user-select: text;
+
+    color: var(--message-primary);
+    border-top: 1px dashed var(--message-primary);
+}
+
+#tfw_input_container .copyable-area {
+    display: flex;
+
+    padding: 5px 10px;
+
+    background-color: var(--rich-text-panel-background);
+
+    align-items: center;
+    justify-content: space-between;
+}
+
+#tfw_input_container .default_translator {
+    width: 84px;
+    margin-left: -10px;
+    padding: 5px 10px;
+
+    border: 1px solid var(--border-strong);
+}
+#tfw_input_container .translate_btn {
+    flex: none;
+
+    box-sizing: border-box;
+    min-height: 52px;
+    padding: 5px 10px;
+
+    color: var(--icon);
+}
+
+footer .translate_flag {
+    margin: auto;
+
+    white-space: nowrap;
 }
