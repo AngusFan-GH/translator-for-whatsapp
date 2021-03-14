@@ -151,7 +151,9 @@ $(() => {
       handleClickTranslateBtn(el, $btn, $container);
     });
     $container.append($btn);
-    $btn.click();
+    setTimeout(() => {
+      $btn.click();
+    }, 0);
   }
 
   function handleClickTranslateBtn(el, $btn, $container) {
