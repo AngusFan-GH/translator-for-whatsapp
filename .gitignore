@@ -16,5 +16,3 @@
 !.vscode/launch.json
 !.vscode/extensions.json
 .history/*
-
-package-lock.json
