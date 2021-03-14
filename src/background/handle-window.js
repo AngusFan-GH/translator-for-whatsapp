@@ -56,7 +56,7 @@ function openWindows() {
         },
         (tabs) => {
             const tabIds = tabs.map((t) => t.id);
-            chrome.tabs.remove(tabIds, createWindow);
+            // chrome.tabs.remove(tabIds, createWindow);
         },
     );
 }
