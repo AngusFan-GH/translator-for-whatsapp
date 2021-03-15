@@ -71,7 +71,8 @@ $(() => {
         const { tl, s2 } = changes["languageSetting"].newValue;
         $ipt.next().text(s2)
         $injectIpt.next().text(tl);
-        console.log($ipt.next().text(s2), $injectIpt.next().text(tl));
+        $ipt.next().text(s2);
+        $injectIpt.next().text(tl);
       }
     });
   }
@@ -96,7 +97,9 @@ $(() => {
       $defaultTranslator.val(DefaultTranslator);
     });
     $defaultTranslator.change((e) => {
-      chrome.runtime.sendMessage({ changeDefaultTranslator: e.target.value });
+      chrome.runtime.sendMessage({ changeDefaultTranslator: e.target.value }, () => {
+        renderMessageList();
+      });
     });
   }
 
@@ -120,7 +123,7 @@ $(() => {
   function renderMessageList() {
     const msgList = $('#main .copyable-area .focusable-list-item div.copyable-text:not(.selectable-text) span.selectable-text.copyable-text');
     Array.from(msgList).forEach(msg => {
-      injectTranslateBtn($(msg));
+      injectTranslateResult($(msg));
     });
     const $last = $(msgList[msgList.length - 1]);
     setLanguageSetting($last);
@@ -132,35 +135,34 @@ $(() => {
     chrome.runtime.sendMessage({ setLanguageSettingByMessage: text });
   }
 
-  function injectTranslateBtn(el) {
+  function injectTranslateResult($el) {
     let readMoreBtn = null;
-    const $next = el.next();
+    const $next = $el.next();
     if ($next.attr('role') === 'button') {
       readMoreBtn = $next;
     }
-    const $container = el.parent().parent();
-    const $btn = $('<button id="tfw_translate_btn">翻译</button>');
-    $btn.click(() => {
-      if (readMoreBtn) {
+    const $container = $el.parent().parent();
+    if (readMoreBtn) {
+      setTimeout(() => {
         readMoreBtn.click();
         setTimeout(() => {
-          handleClickTranslateBtn(el, $btn, $container);
+          handleClickTranslateBtn($el, $container);
         }, 0);
-        return;
-      }
-      handleClickTranslateBtn(el, $btn, $container);
-    });
-    $container.append($btn);
-    setTimeout(() => {
-      $btn.click();
-    }, 0);
+      }, 0);
+      return;
+    }
+    handleClickTranslateBtn($el, $container);
   }
 
-  function handleClickTranslateBtn(el, $btn, $container) {
-    const text = $(el.children().get(0)).text();
+  function handleClickTranslateBtn($el, $container) {
+    const text = $($el.children().get(0)).text();
     chrome.runtime.sendMessage({ translateMessage: text }, (e) => {
-      $btn.remove();
-      const $div = $('<div id="tfw_translate_result"></div>');
+      let $div = null;
+      if ($container.find('.tfw_translate_result').get(0)) {
+        $div = $($container.find('.tfw_translate_result').get(0));
+      } else {
+        $div = $('<div class="tfw_translate_result"></div>');
+      }
       $div.text(e.mainMeaning);
       $container.append($div);
     });
@@ -172,9 +174,9 @@ $(() => {
       const target = $(e.target);
       const className = target.prop('className');
       if (typeof className === 'string' && className.includes('focusable-list-item')) {
-        const newMsg = target.find('div.copyable-text:not(.selectable-text) span.selectable-text.copyable-text');
-        if (!newMsg.length) return;
-        injectTranslateBtn(newMsg);
+        const $newMsg = target.find('div.copyable-text:not(.selectable-text) span.selectable-text.copyable-text');
+        if (!$newMsg.length) return;
+        injectTranslateResult($newMsg);
       }
     });
   }

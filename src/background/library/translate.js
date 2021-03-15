@@ -87,7 +87,7 @@ class TranslatorManager {
     updateDefaultTranslator(translator) {
         return new Promise((resolve) => {
             chrome.storage.sync.set({ DefaultTranslator: translator }, () => {
-                resolve();
+                resolve(translator);
             });
         });
     }

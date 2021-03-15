@@ -1,10 +1,4 @@
-#tfw_translate_btn {
-    cursor: pointer;
-
-    color: var(--message-primary);
-}
-
-#tfw_translate_result {
+.tfw_translate_result {
     margin-top: 10px;
     padding: 6px 0 8px;
 

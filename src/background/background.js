@@ -38,7 +38,7 @@ chrome.runtime.onMessage.addListener((request, sender, reponse) => {
     return true;
   }
   if (request.changeDefaultTranslator) {
-    TRANSLATOR_MANAGER.updateDefaultTranslator(request.changeDefaultTranslator);
+    TRANSLATOR_MANAGER.updateDefaultTranslator(request.changeDefaultTranslator).then(result => reponse(result));
     return true;
   }
 });
