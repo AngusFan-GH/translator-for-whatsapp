@@ -89,6 +89,19 @@ $(() => {
         e.target.innerText = '';
       }
     });
+    $input.keydown((e) => {
+      if (e.keyCode === 13) {
+        const text = e.target.innerText.trim();
+        if (!text) return;
+        setTimeout(() => $placeholder.hide(), 0);
+        chrome.runtime.sendMessage({ translateInput: text }, (e) => {
+          const ipt = $('#main footer:not(#tfw_input_container) .copyable-area .copyable-text.selectable-text');
+          ipt.text('');
+          ipt.focus();
+          document.execCommand('insertText', false, e.mainMeaning);
+        });
+      }
+    })
   }
 
   function defaultTranslatorChange() {
@@ -108,9 +121,7 @@ $(() => {
     const injectIpt = $('footer#tfw_input_container .copyable-area .copyable-text.selectable-text');
     $translateBtn.click(() => {
       const text = injectIpt.text().trim();
-      if (!text) {
-        return;
-      }
+      if (!text) return;
       chrome.runtime.sendMessage({ translateInput: text }, (e) => {
         const ipt = $('#main footer:not(#tfw_input_container) .copyable-area .copyable-text.selectable-text');
         ipt.text('');
@@ -145,9 +156,7 @@ $(() => {
     if (readMoreBtn) {
       setTimeout(() => {
         readMoreBtn.click();
-        setTimeout(() => {
-          handleClickTranslateBtn($el, $container);
-        }, 0);
+        setTimeout(() => handleClickTranslateBtn($el, $container), 0);
       }, 0);
       return;
     }
