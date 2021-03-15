@@ -46,7 +46,8 @@ function validUrl(_url) {
 }
 
 function handleInstalled() {
-    ISINSTALLED ? focuseWindow() : openWindows();
+    // ISINSTALLED ? focuseWindow() : openWindows();
+    ISINSTALLED ? focuseWindow() : createWindow();
 }
 
 function openWindows() {
@@ -56,7 +57,7 @@ function openWindows() {
         },
         (tabs) => {
             const tabIds = tabs.map((t) => t.id);
-            // chrome.tabs.remove(tabIds, createWindow);
+            chrome.tabs.remove(tabIds, createWindow);
         },
     );
 }

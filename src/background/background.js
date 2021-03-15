@@ -1,4 +1,3 @@
-
 import { BROWSER_LANGUAGES_MAP } from '../common/scripts/languages.js';
 import TRANSLATOR_MANAGER from './library/translate.js';
 import initWindow from './handle-window';
