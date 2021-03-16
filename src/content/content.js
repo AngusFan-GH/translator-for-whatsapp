@@ -1,6 +1,7 @@
 import $ from 'jquery';
 import './content.css';
-import { TRANSLATIO_NDISPLAY_MODE } from '../common/scripts/modal';
+import { TRANSLATIO_NDISPLAY_MODE, LANGUAGES_TO_CHINESE } from '../common/scripts/modal';
+import { LANGUAGES } from '../common/scripts/languages';
 
 $(async () => {
   let TranslationDisplayMode = 1;
@@ -65,19 +66,21 @@ $(async () => {
           reject(chrome.runtime.lastError);
           return;
         }
-        $ipt.after($(`<div class="translate_flag">${s2}</div>`));
-        $injectIpt.after($(`<div class="translate_flag">${tl}</div>`));
+        $ipt.after($(`<div class="translate_flag">${getChinese(s2)}</div>`));
+        $injectIpt.after($(`<div class="translate_flag">${getChinese(tl)}</div>`));
       }
     );
     chrome.storage.onChanged.addListener((changes, area) => {
       if (area === "sync" && changes["languageSetting"]) {
         const { tl, s2 } = changes["languageSetting"].newValue;
-        $ipt.next().text(s2)
-        $injectIpt.next().text(tl);
-        $ipt.next().text(s2);
-        $injectIpt.next().text(tl);
+        $ipt.next().text(getChinese(s2));
+        $injectIpt.next().text(getChinese(tl));
       }
     });
+  }
+
+  function getChinese(code) {
+    return LANGUAGES_TO_CHINESE[LANGUAGES[code] || code] || code;
   }
 
   function listenInputValueChange() {
