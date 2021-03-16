@@ -101,7 +101,29 @@ $(() => {
           document.execCommand('insertText', false, e.mainMeaning);
         });
       }
-    })
+    });
+    $input.focus((e) => {
+      setCaret(e.target);
+      $(e.target).parent().addClass('focused');
+    });
+    $input.blur((e) => $(e.target).parent().removeClass('focused'));
+  }
+
+  function setCaret(el) {
+    el.focus();
+    if($.support.msie) {
+        const range = document.selection.createRange();
+        range.moveToElementText(el);
+        range.select();
+        document.selection.empty(); //取消选中
+    } else {
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        range.collapse(false);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+    }
   }
 
   function defaultTranslatorChange() {
