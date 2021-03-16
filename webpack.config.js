@@ -3,6 +3,7 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const OptimizeCssAssetsWebpackPlugin = require('optimize-css-assets-webpack-plugin');
 const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 const CopyWebpackPlugin = require('copy-webpack-plugin');
+const { name, version } = require('./package.json');
 
 const commonCssLoader = [
     MiniCssExtractPlugin.loader,
@@ -22,7 +23,7 @@ module.exports = {
         'content': ['./src/content/content.js']
     },
     output: {
-        path: resolve(__dirname, 'build'),
+        path: resolve(__dirname, 'build/' + name + '-v' + version),
         filename: '[name]/[name].js'
     },
     module: {
