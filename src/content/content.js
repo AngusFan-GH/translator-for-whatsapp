@@ -117,18 +117,18 @@ $(async () => {
 
   function setCaret(el) {
     el.focus();
-    if($.support.msie) {
-        const range = document.selection.createRange();
-        range.moveToElementText(el);
-        range.select();
-        document.selection.empty(); //取消选中
+    if ($.support.msie) {
+      const range = document.selection.createRange();
+      range.moveToElementText(el);
+      range.select();
+      document.selection.empty(); //取消选中
     } else {
-        const range = document.createRange();
-        range.selectNodeContents(el);
-        range.collapse(false);
-        const sel = window.getSelection();
-        sel.removeAllRanges();
-        sel.addRange(range);
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      range.collapse(false);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
     }
   }
 
@@ -159,7 +159,7 @@ $(async () => {
     const $msgList = $('#main .copyable-area .focusable-list-item div.copyable-text:not(.selectable-text) span.selectable-text.copyable-text');
     const $last = $msgList.last();
     setLanguageSetting($last);
-    
+
     switch (TranslationDisplayMode) {
       case 1:
         Array.from($msgList).reverse().forEach(msg => renderTranslateResult($(msg), true));
@@ -173,7 +173,7 @@ $(async () => {
         $('#main .tfw_translate_result').hide();
         break;
     }
-    
+
   }
 
   function setLanguageSetting($target) {

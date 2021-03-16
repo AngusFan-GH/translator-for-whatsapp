@@ -35,6 +35,7 @@ chrome.runtime.onMessage.addListener((request, sender, reponse) => {
   }
   if (request.setLanguageSettingByMessage) {
     TRANSLATOR_MANAGER.detect(request.setLanguageSettingByMessage).then(e => {
+      e = e === 'zh-CN' ? 'en' : e;
       TRANSLATOR_MANAGER.updateLanguageSetting({ s2: e });
     });
     return true;

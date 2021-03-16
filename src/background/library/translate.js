@@ -22,6 +22,10 @@ class TranslatorManager {
          * Default translator.
          */
         this.DEFAULT_TRANSLATOR = '';
+
+        this.TRANSLATE_RESULT_CACHE = Object.keys(this.TRANSLATORS).reduce((set, translator) => (set[translator] = {}, set), {});
+
+        this.DETECT_LANGUAGE_CACHE = Object.keys(this.TRANSLATORS).reduce((set, translator) => (set[translator] = {}, set), {});
     }
 
     /**
@@ -52,7 +56,13 @@ class TranslatorManager {
      */
     async detect(text) {
         await this.loadConfig();
-        return this.TRANSLATORS[this.DEFAULT_TRANSLATOR].detect(text);
+        if (this.DETECT_LANGUAGE_CACHE[this.DEFAULT_TRANSLATOR][escape(text)]) {
+            return Promise.resolve(this.DETECT_LANGUAGE_CACHE[this.DEFAULT_TRANSLATOR][escape(text)]);
+        }
+        return this.TRANSLATORS[this.DEFAULT_TRANSLATOR].detect(text).then(res => {
+            this.DETECT_LANGUAGE_CACHE[this.DEFAULT_TRANSLATOR][escape(text)] = res;
+            return Promise.resolve(res);
+        });
     }
 
     /**
@@ -68,10 +78,26 @@ class TranslatorManager {
             // Detect language first.
             sl = sl === 'auto' ? await this.detect(text) : sl;
             tl = tl === 'auto' ? await this.detect(text) : tl;
+            const slCache = this.TRANSLATE_RESULT_CACHE[this.DEFAULT_TRANSLATOR][escape(sl)];
+            if (slCache) {
+                const tlCache = slCache[escape(tl)];
+                if (tlCache) {
+                    const result = tlCache[escape(text)];
+                    if (result) {
+                        return Promise.resolve(result);
+                    }
+                } else {
+                    this.TRANSLATE_RESULT_CACHE[this.DEFAULT_TRANSLATOR][escape(sl)][escape(tl)] = {};
+                }
+            } else {
+                this.TRANSLATE_RESULT_CACHE[this.DEFAULT_TRANSLATOR][escape(sl)] = {};
+                this.TRANSLATE_RESULT_CACHE[this.DEFAULT_TRANSLATOR][escape(sl)][escape(tl)] = {};
+            }
             // Do translate.
             return this.TRANSLATORS[this.DEFAULT_TRANSLATOR].translate(text, sl, tl).then(result => {
                 result.sourceLanguage = sl;
                 result.targetLanguage = tl;
+                this.TRANSLATE_RESULT_CACHE[this.DEFAULT_TRANSLATOR][escape(sl)][escape(tl)][escape(text)] = result;
                 return Promise.resolve(result);
             })
         } catch (error) {
