@@ -165,7 +165,7 @@ $(async () => {
         Array.from($msgList).reverse().forEach(msg => renderTranslateResult($(msg), true));
         break;
       case 2:
-        $('#main .tfw_translate_result').hide();
+        $('#main .tfw_translate_result').show();
         Array.from($msgList).reverse().forEach(msg => renderTranslateResult($(msg)));
         break;
       default:
