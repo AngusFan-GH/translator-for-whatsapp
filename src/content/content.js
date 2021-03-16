@@ -1,7 +1,9 @@
 import $ from 'jquery';
 import './content.css';
+import { TRANSLATIO_NDISPLAY_MODE } from '../common/scripts/modal';
 
-$(() => {
+$(async () => {
+  let TranslationDisplayMode = 1;
   listenEnterChatPage();
   listenLeaveChatPage();
 
@@ -12,6 +14,7 @@ $(() => {
       const id = target.attr('id');
       if (typeof id === 'string' && 'main' === id) {
         renderMessageList();
+        listenMessageListChange();
         injectInputContainer();
       }
     });
@@ -40,7 +43,7 @@ $(() => {
     `));
     const $textArea = $($copyableArea.children('div').get(1)).addClass('translate_area');
     const $btn = $(`
-      <button class="translate_btn">翻译</button>
+      <button class="translate_btn">${TRANSLATIO_NDISPLAY_MODE[TranslationDisplayMode]}</button>
     `);
     $copyableArea.empty().append([$selectContainer, $textArea, $btn]);
     $footer.empty().append($copyableArea);
@@ -140,27 +143,34 @@ $(() => {
 
   function clickTranslateBtn() {
     const $translateBtn = $('#tfw_input_container .translate_btn');
-    const injectIpt = $('footer#tfw_input_container .copyable-area .copyable-text.selectable-text');
     $translateBtn.click(() => {
-      const text = injectIpt.text().trim();
-      if (!text) return;
-      chrome.runtime.sendMessage({ translateInput: text }, (e) => {
-        const ipt = $('#main footer:not(#tfw_input_container) .copyable-area .copyable-text.selectable-text');
-        ipt.text('');
-        ipt.focus();
-        document.execCommand('insertText', false, e.mainMeaning);
-      });
+      if (++TranslationDisplayMode >= TRANSLATIO_NDISPLAY_MODE.length) {
+        TranslationDisplayMode = 0;
+      }
+      $translateBtn.text(TRANSLATIO_NDISPLAY_MODE[TranslationDisplayMode]);
+      renderMessageList();
     });
   }
 
   function renderMessageList() {
-    const msgList = $('#main .copyable-area .focusable-list-item div.copyable-text:not(.selectable-text) span.selectable-text.copyable-text');
-    Array.from(msgList).forEach(msg => {
-      injectTranslateResult($(msg));
-    });
-    const $last = $(msgList[msgList.length - 1]);
+    const $msgList = $('#main .copyable-area .focusable-list-item div.copyable-text:not(.selectable-text) span.selectable-text.copyable-text');
+    const $last = $msgList.last();
     setLanguageSetting($last);
-    listenMessageListChange();
+    
+    switch (TranslationDisplayMode) {
+      case 1:
+        Array.from($msgList).reverse().forEach(msg => renderTranslateResult($(msg), true));
+        break;
+      case 2:
+        $('#main .tfw_translate_result').hide();
+        Array.from($msgList).reverse().forEach(msg => renderTranslateResult($(msg)));
+        break;
+      default:
+        $msgList.parent().show();
+        $('#main .tfw_translate_result').hide();
+        break;
+    }
+    
   }
 
   function setLanguageSetting($target) {
@@ -168,7 +178,13 @@ $(() => {
     chrome.runtime.sendMessage({ setLanguageSettingByMessage: text });
   }
 
-  function injectTranslateResult($el) {
+  function renderTranslateResult($el, isHideSource = false) {
+    const $resultContainer = $el.parent().next();
+    if ($resultContainer && $resultContainer.css('display') === 'none') {
+      $resultContainer.show();
+      handleToggleSourceText($el, isHideSource);
+      return;
+    }
     let readMoreBtn = null;
     const $next = $el.next();
     if ($next.attr('role') === 'button') {
@@ -178,14 +194,16 @@ $(() => {
     if (readMoreBtn) {
       setTimeout(() => {
         readMoreBtn.click();
-        setTimeout(() => handleClickTranslateBtn($el, $container), 0);
+        setTimeout(() => {
+          handleRenderTranslateResult($el, $container, isHideSource);
+        }, 0);
       }, 0);
       return;
     }
-    handleClickTranslateBtn($el, $container);
+    handleRenderTranslateResult($el, $container, isHideSource);
   }
 
-  function handleClickTranslateBtn($el, $container) {
+  function handleRenderTranslateResult($el, $container, isHideSource) {
     const text = $($el.children().get(0)).text();
     chrome.runtime.sendMessage({ translateMessage: text }, (e) => {
       let $div = null;
@@ -196,7 +214,16 @@ $(() => {
       }
       $div.text(e.mainMeaning);
       $container.append($div);
+      handleToggleSourceText($el, isHideSource);
     });
+  }
+
+  function handleToggleSourceText($el, isHideSource) {
+    if (isHideSource) {
+      $el.parent().hide();
+    } else {
+      $el.parent().show();
+    }
   }
 
   function listenMessageListChange() {
@@ -207,20 +234,15 @@ $(() => {
       if (typeof className === 'string' && className.includes('focusable-list-item')) {
         const $newMsg = target.find('div.copyable-text:not(.selectable-text) span.selectable-text.copyable-text');
         if (!$newMsg.length) return;
-        injectTranslateResult($newMsg);
+        switch (TranslationDisplayMode) {
+          case 1:
+            renderTranslateResult($newMsg, true);
+            break;
+          case 2:
+            renderTranslateResult($newMsg);
+            break;
+        }
       }
     });
   }
-
-  chrome.storage.onChanged.addListener((changes, namespace) => {
-    for (const key in changes) {
-      const storageChange = changes[key];
-      console.log('Storage key "%s" in namespace "%s" changed. '
-        + 'Old value was "%s", new value is "%s".',
-        key,
-        namespace,
-        storageChange.oldValue,
-        storageChange.newValue);
-    }
-  });
 });

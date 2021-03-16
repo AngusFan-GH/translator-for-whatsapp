@@ -101,7 +101,6 @@ class TranslatorManager {
      */
     updateLanguageSetting(settings) {
         return new Promise((resolve) => {
-            console.log(Object.assign(this.LANGUAGE_SETTING, settings));
             chrome.storage.sync.set({ languageSetting: Object.assign(this.LANGUAGE_SETTING, settings) }, () => {
                 resolve();
             });

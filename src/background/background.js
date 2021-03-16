@@ -9,7 +9,9 @@ const DEFAULT_SETTINGS = {
     s2: 'en'
   },
   DefaultTranslator: 'GoogleTranslate',
-  OtherSettings: {}
+  OtherSettings: {
+    TranslationDisplayMode: 0
+  }
 }
 
 initWindow();
