@@ -3,6 +3,7 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const OptimizeCssAssetsWebpackPlugin = require('optimize-css-assets-webpack-plugin');
 const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 const CopyWebpackPlugin = require('copy-webpack-plugin');
+const FileManagerPlugin = require('filemanager-webpack-plugin');
 const { name, version } = require('./package.json');
 
 const commonCssLoader = [
@@ -101,6 +102,18 @@ module.exports = {
                     to: 'icons'
                 },
             ]
+        }),
+        new FileManagerPlugin({
+            events: {
+                onEnd: {
+                    archive: [
+                        {
+                            source: './build/' + name + '-v' + version,
+                            destination: './build/' + name + '-v' + version + '.zip'
+                        },
+                    ]
+                }
+            }
         })
     ],
     mode: 'production'
