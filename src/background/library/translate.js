@@ -23,9 +23,9 @@ class TranslatorManager {
          */
         this.DEFAULT_TRANSLATOR = '';
 
-        this.TRANSLATE_RESULT_CACHE = Object.keys(this.TRANSLATORS).reduce((set, translator) => (set[translator] = {}, set), {});
+        this.TRANSLATE_RESULT_CACHE = Object.keys(this.TRANSLATORS).reduce((set, translator) => (set[translator] = Object.create(null), set), Object.create(null));
 
-        this.DETECT_LANGUAGE_CACHE = Object.keys(this.TRANSLATORS).reduce((set, translator) => (set[translator] = {}, set), {});
+        this.DETECT_LANGUAGE_CACHE = Object.keys(this.TRANSLATORS).reduce((set, translator) => (set[translator] = Object.create(null), set), Object.create(null));
     }
 
     /**
@@ -87,11 +87,11 @@ class TranslatorManager {
                         return Promise.resolve(result);
                     }
                 } else {
-                    this.TRANSLATE_RESULT_CACHE[this.DEFAULT_TRANSLATOR][escape(sl)][escape(tl)] = {};
+                    this.TRANSLATE_RESULT_CACHE[this.DEFAULT_TRANSLATOR][escape(sl)][escape(tl)] = Object.create(null);
                 }
             } else {
-                this.TRANSLATE_RESULT_CACHE[this.DEFAULT_TRANSLATOR][escape(sl)] = {};
-                this.TRANSLATE_RESULT_CACHE[this.DEFAULT_TRANSLATOR][escape(sl)][escape(tl)] = {};
+                this.TRANSLATE_RESULT_CACHE[this.DEFAULT_TRANSLATOR][escape(sl)] = Object.create(null);
+                this.TRANSLATE_RESULT_CACHE[this.DEFAULT_TRANSLATOR][escape(sl)][escape(tl)] = Object.create(null);
             }
             // Do translate.
             return this.TRANSLATORS[this.DEFAULT_TRANSLATOR].translate(text, sl, tl).then(result => {

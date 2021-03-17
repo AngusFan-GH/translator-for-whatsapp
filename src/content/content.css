@@ -7,7 +7,13 @@
     word-break: break-all;
 
     color: var(--message-primary);
-    border-top: 1px dashed var(--message-primary);
+    border-top: 1px solid var(--message-primary);
+}
+
+.tfw_translate_result.only {
+    margin-top: 0;
+
+    border: none;
 }
 
 #tfw_input_container .copyable-area {
@@ -34,8 +40,11 @@
     flex: none;
 
     box-sizing: border-box;
+    width: 44px;
     min-height: 52px;
     padding: 5px 10px;
+
+    white-space: nowrap;
 
     color: var(--icon);
 }

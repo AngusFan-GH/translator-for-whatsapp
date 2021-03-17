@@ -121,7 +121,7 @@ $(async () => {
       const range = document.selection.createRange();
       range.moveToElementText(el);
       range.select();
-      document.selection.empty(); //取消选中
+      document.selection.empty();
     } else {
       const range = document.createRange();
       range.selectNodeContents(el);
@@ -186,6 +186,11 @@ $(async () => {
     if ($resultContainer && $resultContainer.css('display') === 'none') {
       $resultContainer.show();
       handleToggleSourceText($el, isHideSource);
+      if (isHideSource) {
+        $resultContainer.addClass('only');
+      } else {
+        $resultContainer.removeClass('only');
+      }
       return;
     }
     let readMoreBtn = null;
@@ -218,6 +223,11 @@ $(async () => {
       $div.text(e.mainMeaning);
       $container.append($div);
       handleToggleSourceText($el, isHideSource);
+      if (isHideSource) {
+        $div.addClass('only');
+      } else {
+        $div.removeClass('only');
+      }
     });
   }
 
