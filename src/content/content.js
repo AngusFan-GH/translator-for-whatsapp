@@ -84,9 +84,19 @@ $(async () => {
   }
 
   function listenInputValueChange() {
+    const $ipt = $('#main footer:not(#tfw_input_container) .copyable-area .copyable-text.selectable-text');
     const $area = $('#tfw_input_container .translate_area > div');
     const $placeholder = $($area.children('div').get(0)).text('输入需要翻译的消息');
     const $input = $($area.children('div').get(1));
+    const $sendBtnContainer = $('#main footer:not(#tfw_input_container) .copyable-area > div:nth-last-child(1)');
+    $ipt.keydown(e => {
+      if (e.keyCode === 13) {
+        clearInjectInputValue(e.target, $input, $placeholder);
+      }
+    });
+    $sendBtnContainer.on('click', 'button:has(span[data-icon="send"])', () => {
+      clearInjectInputValue($ipt[0], $input, $placeholder);
+    });
     $input.bind('DOMSubtreeModified', (e) => {
       if (e.target.innerText.trim()) {
         $placeholder.hide();
@@ -95,24 +105,30 @@ $(async () => {
         e.target.innerText = '';
       }
     });
-    $input.keydown((e) => {
+    $input.keydown(e => {
       if (e.keyCode === 13) {
         const text = e.target.innerText.trim();
         if (!text) return;
         setTimeout(() => $placeholder.hide(), 0);
         chrome.runtime.sendMessage({ translateInput: text }, (e) => {
-          const ipt = $('#main footer:not(#tfw_input_container) .copyable-area .copyable-text.selectable-text');
-          ipt.text('');
-          ipt.focus();
+          $ipt.text('');
+          $ipt.focus();
           document.execCommand('insertText', false, e.mainMeaning);
         });
       }
     });
-    $input.focus((e) => {
+    $input.focus(e => {
       setCaret(e.target);
       $(e.target).parent().addClass('focused');
     });
-    $input.blur((e) => $(e.target).parent().removeClass('focused'));
+    $input.blur(e => $(e.target).parent().removeClass('focused'));
+  }
+
+  function clearInjectInputValue(e, $input, $placeholder) {
+    const text = e.innerText.trim();
+    if (!text) return;
+    $input.text('');
+    $placeholder.show();
   }
 
   function setCaret(el) {
@@ -137,7 +153,7 @@ $(async () => {
     chrome.storage.sync.get('DefaultTranslator', ({ DefaultTranslator }) => {
       $defaultTranslator.val(DefaultTranslator);
     });
-    $defaultTranslator.change((e) => {
+    $defaultTranslator.change(e => {
       chrome.runtime.sendMessage({ changeDefaultTranslator: e.target.value }, () => {
         renderMessageList();
       });
