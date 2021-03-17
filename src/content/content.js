@@ -129,6 +129,9 @@ $(async () => {
     if (!text) return;
     $input.text('');
     $placeholder.show();
+    setTimeout(() => {
+      $input.focus();
+    }, 0);
   }
 
   function setCaret(el) {
