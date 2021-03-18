@@ -1,6 +1,7 @@
-import BAIDU from './translators/baidu.js';
-import BING from './translators/bing.js';
-import GOOGLE from './translators/google.js';
+import BAIDU from './translators/baidu';
+import BING from './translators/bing';
+import GOOGLE from './translators/google';
+import YOUDAO from './translators/youdao';
 
 class TranslatorManager {
     constructor() {
@@ -10,7 +11,8 @@ class TranslatorManager {
         this.TRANSLATORS = {
             BaiduTranslate: BAIDU,
             BingTranslate: BING,
-            GoogleTranslate: GOOGLE
+            GoogleTranslate: GOOGLE,
+            YouDaoTranslate: YOUDAO,
         };
 
         /**

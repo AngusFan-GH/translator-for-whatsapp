@@ -40,6 +40,7 @@ $(async () => {
         <option value="GoogleTranslate">谷歌翻译</option>
         <option value="BingTranslate">必应翻译</option>
         <option value="BaiduTranslate">百度翻译</option>
+        <option value="YouDaoTranslate">有道翻译</option>
       </select>
     `));
     const $textArea = $($copyableArea.children('div').get(1)).addClass('translate_area');
@@ -66,15 +67,56 @@ $(async () => {
           reject(chrome.runtime.lastError);
           return;
         }
-        $ipt.after($(`<div class="translate_flag">${getChinese(s2)}</div>`));
-        $injectIpt.after($(`<div class="translate_flag">${getChinese(tl)}</div>`));
+        $ipt.after($(`
+          <div class="translate_flag">
+            <span class="translate_flag_button" data-target="s2" data-lg="${s2}">${getChinese(s2)}</span>
+          </div>
+        `));
+        $injectIpt.after($(`
+          <div class="translate_flag">
+            <span class="translate_flag_button" data-target="tl" data-lg="${tl}">${getChinese(tl)}</span>
+          </div>
+        `));
+        $('#main footer:not(#tfw_input_container) .translate_flag .translate_flag_button').click(event => {
+        // $('#main footer .translate_flag .translate_flag_button').click(event => {
+          const $button = $(event.target);
+          if ($button.find('.translate_flag_select_container').length) return;
+          const $container = $button.parent();
+          const buttonTarget = $button.attr('data-target');
+          const buttonLg = $button.attr('data-lg');
+          $container.parent().css('overflow', 'initial');
+          const $select = $('<div class="translate_flag_select_container"></div>');
+          chrome.storage.sync.get('languageSetting', ({ languageSetting }) => {
+            const languageSet = languageSetting.set.reduce((set, lg) => {
+              if (lg === buttonLg) return set;
+              const $lgTmpl = $(`<div data-lg="${lg}">${getChinese(lg)}</div>`);
+              $lgTmpl.click(e => {
+                chrome.runtime.sendMessage({
+                  setLanguageSetting: {
+                    from: 'select',
+                    language: $(e.target).attr('data-lg'),
+                    target: buttonTarget
+                  }
+                }, () => {
+                  $select.remove();
+                  $container.parent().css('overflow', 'hidden');
+                  if (buttonTarget === 'tl') renderMessageList();
+                });
+              });
+              set.push($lgTmpl);
+              return set;
+            }, []);
+            $select.append(...languageSet);
+            $container.append($select);
+          });
+        });
       }
     );
     chrome.storage.onChanged.addListener((changes, area) => {
       if (area === "sync" && changes["languageSetting"]) {
         const { tl, s2 } = changes["languageSetting"].newValue;
-        $ipt.next().text(getChinese(s2));
-        $injectIpt.next().text(getChinese(tl));
+        $ipt.next().find('.translate_flag_button').attr('data-lg', s2).text(getChinese(s2));
+        $injectIpt.next().find('.translate_flag_button').attr('data-lg', tl).text(getChinese(tl));
       }
     });
   }
@@ -197,7 +239,12 @@ $(async () => {
 
   function setLanguageSetting($target) {
     const text = $($target.children().get(0)).text();
-    chrome.runtime.sendMessage({ setLanguageSettingByMessage: text });
+    chrome.runtime.sendMessage({
+      setLanguageSetting: {
+        from: 'message',
+        text
+      }
+    });
   }
 
   function renderTranslateResult($el, isHideSource = false) {

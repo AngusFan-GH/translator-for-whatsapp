@@ -6,7 +6,13 @@ const DEFAULT_SETTINGS = {
   languageSetting: {
     sl: 'auto',
     tl: BROWSER_LANGUAGES_MAP[chrome.i18n.getUILanguage()],
-    s2: 'en'
+    s2: 'en',
+    set: [
+      'en',
+      'zh-CN',
+      'ja',
+      'ko'
+    ]
   },
   DefaultTranslator: 'GoogleTranslate',
   OtherSettings: {
@@ -33,11 +39,21 @@ chrome.runtime.onMessage.addListener((request, sender, reponse) => {
     TRANSLATOR_MANAGER.translate(request.translateInput, true).then(result => reponse(result));
     return true;
   }
-  if (request.setLanguageSettingByMessage) {
-    TRANSLATOR_MANAGER.detect(request.setLanguageSettingByMessage).then(e => {
-      e = e === 'zh-CN' ? 'en' : e;
-      TRANSLATOR_MANAGER.updateLanguageSetting({ s2: e });
-    });
+  if (request.setLanguageSetting) {
+    const {from} = request.setLanguageSetting;
+    switch (from) {
+      case 'message':
+        const {text } = request.setLanguageSetting
+        TRANSLATOR_MANAGER.detect(text).then(e => {
+          e = e === 'zh-CN' ? 'en' : e;
+          TRANSLATOR_MANAGER.updateLanguageSetting({ s2: e });
+        });
+        break;
+      case 'select':
+        const { target, language } = request.setLanguageSetting;
+        TRANSLATOR_MANAGER.updateLanguageSetting({ [target]: language }).then(() => reponse());
+        break;
+    }
     return true;
   }
   if (request.changeDefaultTranslator) {
