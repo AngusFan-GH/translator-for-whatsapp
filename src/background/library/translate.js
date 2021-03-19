@@ -1,7 +1,6 @@
 import BAIDU from './translators/baidu';
 import BING from './translators/bing';
 import GOOGLE from './translators/google';
-import YOUDAO from './translators/youdao';
 
 class TranslatorManager {
     constructor() {
@@ -12,7 +11,6 @@ class TranslatorManager {
             BaiduTranslate: BAIDU,
             BingTranslate: BING,
             GoogleTranslate: GOOGLE,
-            YouDaoTranslate: YOUDAO,
         };
 
         /**
