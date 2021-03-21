@@ -132,6 +132,11 @@ class TranslatorManager {
             });
         });
     }
+
+    async getSupportLanguage() {
+        await this.loadConfig();
+        return Promise.resolve(Array.from(this.TRANSLATORS[this.DEFAULT_TRANSLATOR].supportedLanguages()));
+    }
 }
 const TRANSLATOR_MANAGER = new TranslatorManager();
 export default TRANSLATOR_MANAGER;

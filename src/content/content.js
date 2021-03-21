@@ -2,6 +2,7 @@ import $ from 'jquery';
 import './content.css';
 import { TRANSLATIO_NDISPLAY_MODE, LANGUAGES_TO_CHINESE } from '../common/scripts/modal';
 import { LANGUAGES } from '../common/scripts/languages';
+import { _ } from 'core-js';
 
 $(async () => {
   let TranslationDisplayMode = 1;
@@ -62,10 +63,6 @@ $(async () => {
       'languageSetting',
       ({ languageSetting }) => {
         const { tl, s2 } = languageSetting;
-        if (chrome.runtime.lastError) {
-          reject(chrome.runtime.lastError);
-          return;
-        }
         $ipt.after($(`
           <div class="translate_flag">
             <span class="translate_flag_button" data-target="s2" data-lg="${s2}">${getChinese(s2)}</span>
@@ -76,19 +73,18 @@ $(async () => {
             <span class="translate_flag_button" data-target="tl" data-lg="${tl}">${getChinese(tl)}</span>
           </div>
         `));
-        $('#main footer:not(#tfw_input_container) .translate_flag .translate_flag_button').click(event => {
-        // $('#main footer .translate_flag .translate_flag_button').click(event => {
+        $('#main footer .translate_flag .translate_flag_button').click(event => {
           const $button = $(event.target);
-          if ($button.find('.translate_flag_select_container').length) return;
-          const $container = $button.parent();
+          const $container = $('#main');
           const buttonTarget = $button.attr('data-target');
           const buttonLg = $button.attr('data-lg');
-          $container.parent().css('overflow', 'initial');
-          const $select = $('<div class="translate_flag_select_container"></div>');
-          chrome.storage.sync.get('languageSetting', ({ languageSetting }) => {
-            const languageSet = languageSetting.set.reduce((set, lg) => {
+          const $selectContainer = $('<div class="translate_flag_select_container"></div>');
+          const $selectSearch = $(`<input class="translate_flag_select_search" type="text" autocomplete="off" placeholder="输入语种"/>`);
+          $selectContainer.append($selectSearch);
+          chrome.runtime.sendMessage({ getSupportLanguage: true }, (languages) => {
+            const languageSet = handleSelectLanguages(languages).reduce((set, lg) => {
               if (lg === buttonLg) return set;
-              const $lgTmpl = $(`<div data-lg="${lg}">${getChinese(lg)}</div>`);
+              const $lgTmpl = $(`<li data-lg="${lg}">${getChinese(lg)}</li>`);
               $lgTmpl.click(e => {
                 chrome.runtime.sendMessage({
                   setLanguageSetting: {
@@ -97,16 +93,30 @@ $(async () => {
                     target: buttonTarget
                   }
                 }, () => {
-                  $select.remove();
-                  $container.parent().css('overflow', 'hidden');
+                  $selectContainer.remove();
                   if (buttonTarget === 'tl') renderMessageList();
                 });
               });
               set.push($lgTmpl);
               return set;
             }, []);
-            $select.append(...languageSet);
-            $container.append($select);
+            const $selectUl = $('<ul></ul>').append(...languageSet);
+            $selectContainer.append($selectUl).css({
+              right: $('body').width() - ($button.offset().left + $button.width()) + 'px',
+              bottom: $('body').height() - ($button.offset().top - 5) + 'px'
+            });
+            $container.append($selectContainer);
+            $selectSearch.focus();
+            $selectSearch.on('input propertychange', (e) => {
+              const text = $(e.target).val().trim();
+              if (text == null || text === '') {
+                $('.translate_flag_select_container ul > li').show();
+                return;
+              }
+              languageSet.forEach(lg => {
+                lg.text().toLowerCase().includes(text.toLowerCase()) ? lg.show() : lg.hide();
+              });
+            });
           });
         });
       }
@@ -118,6 +128,16 @@ $(async () => {
         $injectIpt.next().find('.translate_flag_button').attr('data-lg', tl).text(getChinese(tl));
       }
     });
+    $(document).bind('click', (e) => {
+      if ($(e.target).closest('.translate_flag_select_search').length) return;
+      const $selectContaienr = $('.translate_flag_select_container');
+      if ($selectContaienr.length) $selectContaienr.remove();
+    });
+  }
+
+  function handleSelectLanguages(languages) {
+    const commonLanguages = ['zh-CN', 'en', 'es', 'fr', 'pt', 'ar', 'ru', 'de', 'ta', 'hi'];
+    return commonLanguages.concat(languages.filter(lg => lg !== 'auto' && commonLanguages.indexOf(lg) === -1));
   }
 
   function getChinese(code) {

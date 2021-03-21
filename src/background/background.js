@@ -1,4 +1,4 @@
-import { BROWSER_LANGUAGES_MAP } from '../common/scripts/languages.js';
+import { BROWSER_LANGUAGES_MAP, LANGUAGES } from '../common/scripts/languages.js';
 import TRANSLATOR_MANAGER from './library/translate.js';
 import initWindow from './handle-window';
 
@@ -7,12 +7,7 @@ const DEFAULT_SETTINGS = {
     sl: 'auto',
     tl: BROWSER_LANGUAGES_MAP[chrome.i18n.getUILanguage()],
     s2: 'en',
-    set: [
-      'en',
-      'zh-CN',
-      'ja',
-      'ko'
-    ]
+    set: Object.keys(LANGUAGES)
   },
   DefaultTranslator: 'GoogleTranslate',
   OtherSettings: {
@@ -40,10 +35,10 @@ chrome.runtime.onMessage.addListener((request, sender, reponse) => {
     return true;
   }
   if (request.setLanguageSetting) {
-    const {from} = request.setLanguageSetting;
+    const { from } = request.setLanguageSetting;
     switch (from) {
       case 'message':
-        const {text } = request.setLanguageSetting
+        const { text } = request.setLanguageSetting
         TRANSLATOR_MANAGER.detect(text).then(e => {
           e = e === 'zh-CN' ? 'en' : e;
           TRANSLATOR_MANAGER.updateLanguageSetting({ s2: e });
@@ -58,6 +53,10 @@ chrome.runtime.onMessage.addListener((request, sender, reponse) => {
   }
   if (request.changeDefaultTranslator) {
     TRANSLATOR_MANAGER.updateDefaultTranslator(request.changeDefaultTranslator).then(result => reponse(result));
+    return true;
+  }
+  if (request.getSupportLanguage) {
+    TRANSLATOR_MANAGER.getSupportLanguage().then(result => reponse(result));
     return true;
   }
 });

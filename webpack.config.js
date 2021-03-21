@@ -94,7 +94,7 @@ module.exports = {
         new CopyWebpackPlugin({
             patterns: [
                 {
-                    from: './manifest.json',
+                    from: './src/manifest.json',
                     to: './'
                 },
                 {
