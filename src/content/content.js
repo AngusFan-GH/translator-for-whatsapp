@@ -15,7 +15,7 @@ $(async () => {
       const target = $(e.target);
       const id = target.attr('id');
       if (typeof id === 'string' && 'main' === id) {
-        renderMessageList();
+        renderMessageList(true);
         listenMessageListChange();
         injectInputContainer();
       }
@@ -228,7 +228,7 @@ $(async () => {
     });
     $defaultTranslator.change(e => {
       chrome.runtime.sendMessage({ changeDefaultTranslator: e.target.value }, () => {
-        renderMessageList();
+        renderMessageList(true);
         handleInjectInputTranslateFlag();
       });
     });
@@ -264,10 +264,12 @@ $(async () => {
     });
   }
 
-  function renderMessageList() {
+  function renderMessageList(isAutoDetect = false) {
     const $msgList = $('#main .copyable-area .focusable-list-item div.copyable-text:not(.selectable-text) span.selectable-text.copyable-text');
-    const $last = $msgList.last();
-    setLanguageSetting($last);
+    if (isAutoDetect) {
+      const $last = $msgList.last();
+      setLanguageSetting($last);
+    }
 
     switch (TranslationDisplayMode) {
       case 1:
@@ -335,6 +337,7 @@ $(async () => {
         $div = $('<div class="tfw_translate_result"></div>');
       }
       $div.text(e.mainMeaning);
+      $div.append($('<span class="placeholder"></span>'));
       $container.append($div);
       handleToggleSourceText($el, isHideSource);
       if (isHideSource) {
