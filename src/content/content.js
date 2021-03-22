@@ -101,6 +101,8 @@ $(async () => {
               return set;
             }, []);
             const $selectUl = $('<ul></ul>').append(...languageSet);
+            const $empty = $('<li class="empty">无匹配项</li>');
+            $selectUl.append($empty.hide());
             $selectContainer.append($selectUl).css({
               right: $('body').width() - ($button.offset().left + $button.width()) + 'px',
               bottom: $('body').height() - ($button.offset().top - 5) + 'px'
@@ -113,9 +115,16 @@ $(async () => {
                 $('.translate_flag_select_container ul > li').show();
                 return;
               }
+              let count = 0;
               languageSet.forEach(lg => {
-                lg.text().toLowerCase().includes(text.toLowerCase()) ? lg.show() : lg.hide();
+                lg.text().toLowerCase().includes(text.toLowerCase()) ? lg.show() : (count++, lg.hide());
               });
+              console.log(count,languageSet.length);
+              if (count === languageSet.length) {
+                $empty.show();
+              } else {
+                $empty.hide();
+              }
             });
           });
         });
