@@ -5,7 +5,7 @@ let WINDOWID = 0;
 
 export default function initWindow() {
     chrome.runtime.onInstalled.addListener(({ reason }) => {
-        if (reason !== 'install') return;
+        if (reason !== 'install') return openWindows();
         handleInstalled();
     });
 
