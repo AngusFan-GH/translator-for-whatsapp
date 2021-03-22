@@ -2,7 +2,6 @@ import $ from 'jquery';
 import './content.css';
 import { TRANSLATIO_NDISPLAY_MODE, LANGUAGES_TO_CHINESE } from '../common/scripts/modal';
 import { LANGUAGES, BROWSER_LANGUAGES_MAP } from '../common/scripts/languages';
-import { _ } from 'core-js';
 
 $(async () => {
   let TranslationDisplayMode = 1;
@@ -10,10 +9,22 @@ $(async () => {
   listenLeaveChatPage();
 
   function listenEnterChatPage() {
-    const app = $('#app');
-    app.bind('DOMNodeInserted', function (e) {
-      const target = $(e.target);
-      const id = target.attr('id');
+    const $app = $('#app');
+    $app.bind('DOMNodeInserted', e => {
+      const $target = $(e.target);
+      const id = $target.attr('id');
+      const className = $target.prop('className');
+      if (typeof className === 'string' && className.includes('two')) {
+        const $friendContainer = $target.find('#pane-side [role="region"] [role="option"] > div');
+        const friendList = Array.from($friendContainer).reduce((list, $friend) => {
+          const friendId = $friend.find('> div:nth-child(2) span > span').text();
+          list.push(friendId);
+          return list;
+        },[]);
+        chrome.runtime.sendMessage({ setFriendList: friendList }, e => {
+          
+        })
+      }
       if (typeof id === 'string' && 'main' === id) {
         renderMessageList(true);
         listenMessageListChange();
@@ -23,13 +34,40 @@ $(async () => {
   }
 
   function listenLeaveChatPage() {
-    const app = $('#app');
-    app.bind('DOMNodeRemoved', function (e) {
-      const target = $(e.target);
-      const id = target.attr('id');
+    const $app = $('#app');
+    $app.bind('DOMNodeRemoved', e => {
+      const $target = $(e.target);
+      const id = $target.attr('id');
       if (typeof id === 'string' && 'main' === id) {
+        const iptText = $target.find('footer:not(#tfw_input_container) .copyable-area .copyable-text.selectable-text').text();
+        const injectIptText = $target.find('footer#tfw_input_container .copyable-area .copyable-text.selectable-text').text();
+        cacheUnsentText(iptText, injectIptText);
       }
     });
+  }
+
+  function cacheUnsentText(tText, sText) {
+    console.log(tText, sText);
+  }
+
+  function rerenderDefaultText() {
+    const $ipt = $('#main footer:not(#tfw_input_container) .copyable-area .copyable-text.selectable-text');
+    const $injectIpt = $('#main footer#tfw_input_container .copyable-area .copyable-text.selectable-text');
+    $injectIpt.focus(e => {
+      setCaret(e.target);
+      $(e.target).parent().addClass('focused');
+    });
+    setTimeout(() => {
+      $ipt.text('');
+      $ipt.focus();
+      document.execCommand('insertText', false, 'How r u?');
+      setTimeout(() => {
+        window.getSelection().removeAllRanges();
+        $injectIpt.text('');
+        $injectIpt.focus();
+        document.execCommand('insertText', false, '你好么？');
+      }, 0);
+    }, 0);
   }
 
   function injectInputContainer() {
@@ -50,6 +88,7 @@ $(async () => {
     $copyableArea.empty().append([$selectContainer, $textArea, $btn]);
     $footer.empty().append($copyableArea);
     $('#main').append($footer);
+    rerenderDefaultText();
     defaultTranslatorChange();
     clickTranslateBtn();
     listenInputValueChange();

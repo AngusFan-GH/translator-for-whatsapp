@@ -10,6 +10,8 @@ const DEFAULT_SETTINGS = {
     set: Object.keys(LANGUAGES)
   },
   DefaultTranslator: 'GoogleTranslate',
+  CurrentFriends: '',
+  CacheUnsentTextList: {},
   OtherSettings: {
     TranslationDisplayMode: 0
   }
@@ -57,6 +59,12 @@ chrome.runtime.onMessage.addListener((request, sender, reponse) => {
   }
   if (request.getSupportLanguage) {
     TRANSLATOR_MANAGER.getSupportLanguage().then(result => reponse(result));
+    return true;
+  }
+  if (request.setFriendList) {
+    return true;
+  }
+  if (request.getUnsentText) {
     return true;
   }
 });
