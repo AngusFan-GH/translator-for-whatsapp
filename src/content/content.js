@@ -20,9 +20,9 @@ $(async () => {
           const friendId = $friend.find('> div:nth-child(2) span > span').text();
           list.push(friendId);
           return list;
-        },[]);
+        }, []);
         chrome.runtime.sendMessage({ setFriendList: friendList }, e => {
-          
+
         })
       }
       if (typeof id === 'string' && 'main' === id) {
@@ -142,9 +142,11 @@ $(async () => {
             const $selectUl = $('<ul></ul>').append(...languageSet);
             const $empty = $('<li class="empty">无匹配项</li>');
             $selectUl.append($empty.hide());
+            const mainWidth = $('#main').width();
+            const sideWidth = $('#pane-side').width();
             $selectContainer.append($selectUl).css({
-              right: $('body').width() - ($button.offset().left + $button.width()) + 'px',
-              bottom: $('body').height() - ($button.offset().top - 5) + 'px'
+              right: mainWidth + sideWidth - ($button.offset().left + $button.width()) + 'px',
+              bottom: $('#main').height() + - ($button.offset().top - 5) + 'px'
             });
             $container.append($selectContainer);
             $selectSearch.focus();
