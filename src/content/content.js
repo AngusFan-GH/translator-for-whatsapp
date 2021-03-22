@@ -16,14 +16,14 @@ $(async () => {
       const className = $target.prop('className');
       if (typeof className === 'string' && className.includes('two')) {
         const $friendContainer = $target.find('#pane-side [role="region"] [role="option"] > div');
-        const friendList = Array.from($friendContainer).reduce((list, $friend) => {
-          const friendId = $friend.find('> div:nth-child(2) span > span').text();
+        console.log($friendContainer);
+        const friendList = Array.from($friendContainer).reduce((list, friend) => {
+          const friendId = $(friend).find('> div:nth-child(2) > div:nth-child(1) span > span').text();
           list.push(friendId);
           return list;
         }, []);
-        chrome.runtime.sendMessage({ setFriendList: friendList }, e => {
-
-        })
+        console.log(friendList);
+        chrome.runtime.sendMessage({ setFriendList: friendList });
       }
       if (typeof id === 'string' && 'main' === id) {
         renderMessageList(true);

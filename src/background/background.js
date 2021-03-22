@@ -11,7 +11,7 @@ const DEFAULT_SETTINGS = {
   },
   DefaultTranslator: 'GoogleTranslate',
   CurrentFriends: '',
-  CacheUnsentTextList: {},
+  CacheUnsentTextMap: {},
   OtherSettings: {
     TranslationDisplayMode: 0
   }
@@ -62,6 +62,16 @@ chrome.runtime.onMessage.addListener((request, sender, reponse) => {
     return true;
   }
   if (request.setFriendList) {
+    request.setFriendList.reduce((textList, firend) => {
+      textList[escape(firend)] = {
+        tText: '',
+        sText: '',
+      };
+      return textList;
+    }, DEFAULT_SETTINGS.CacheUnsentTextMap)
+    chrome.storage.sync.set({ CacheUnsentTextMap: DEFAULT_SETTINGS.CacheUnsentTextMap }, () => {
+      reponse(DEFAULT_SETTINGS.CacheUnsentTextMap)
+    });
     return true;
   }
   if (request.getUnsentText) {
