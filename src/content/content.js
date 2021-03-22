@@ -113,13 +113,13 @@ $(async () => {
               const text = $(e.target).val().trim();
               if (text == null || text === '') {
                 $('.translate_flag_select_container ul > li').show();
+                $empty.hide();
                 return;
               }
               let count = 0;
               languageSet.forEach(lg => {
                 lg.text().toLowerCase().includes(text.toLowerCase()) ? lg.show() : (count++, lg.hide());
               });
-              console.log(count,languageSet.length);
               if (count === languageSet.length) {
                 $empty.show();
               } else {
