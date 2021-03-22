@@ -1,7 +1,7 @@
 import $ from 'jquery';
 import './content.css';
 import { TRANSLATIO_NDISPLAY_MODE, LANGUAGES_TO_CHINESE } from '../common/scripts/modal';
-import { LANGUAGES } from '../common/scripts/languages';
+import { LANGUAGES, BROWSER_LANGUAGES_MAP } from '../common/scripts/languages';
 import { _ } from 'core-js';
 
 $(async () => {
@@ -220,6 +220,26 @@ $(async () => {
     $defaultTranslator.change(e => {
       chrome.runtime.sendMessage({ changeDefaultTranslator: e.target.value }, () => {
         renderMessageList();
+        handleInjectInputTranslateFlag();
+      });
+    });
+  }
+
+  function handleInjectInputTranslateFlag() {
+    chrome.storage.sync.get('languageSetting', ({ languageSetting }) => {
+      const { tl } = languageSetting;
+      chrome.runtime.sendMessage({ getSupportLanguage: true }, (languages) => {
+        if (languages.indexOf(tl) === -1) {
+          chrome.runtime.sendMessage({
+            setLanguageSetting: {
+              from: 'select',
+              language: BROWSER_LANGUAGES_MAP[chrome.i18n.getUILanguage()],
+              target: 'tl'
+            }
+          }, () => {
+            renderMessageList();
+          });
+        }
       });
     });
   }
