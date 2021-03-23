@@ -88,6 +88,14 @@ chrome.runtime.onMessage.addListener((request, sender, reponse) => {
     });
     return true;
   }
+  if (request.updateFriendList) {
+    chrome.storage.sync.get('CacheUnsentTextMap', ({ CacheUnsentTextMap }) => {
+      const friend = escape(request.updateFriendList.replace(' ', ''));
+      CacheUnsentTextMap[friend] = { tText: '', sText: '' };
+      chrome.storage.sync.set({ CacheUnsentTextMap }, () => reponse(CacheUnsentTextMap));
+    });
+    return true;
+  }
 });
 
 function setDefaultSettings(result, settings) {

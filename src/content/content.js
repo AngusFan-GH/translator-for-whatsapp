@@ -5,8 +5,20 @@ import { LANGUAGES, BROWSER_LANGUAGES_MAP } from '../common/scripts/languages';
 
 $(async () => {
   let TranslationDisplayMode = 1;
+  listenFriendListChange();
   listenEnterChatPage();
   listenLeaveChatPage();
+
+  function listenFriendListChange() {
+    const $friendList = $('#pane-side');
+    $friendList.bind('DOMNodeInserted', e => {
+      const $friend = $(e.target).find('[role="option"] > div > div:nth-child(2) > div:nth-child(1) span > span');
+      if ($friend.length) {
+        const friendId = $friend.text();
+        chrome.runtime.sendMessage({ updateFriendList: friendId });
+      }
+    });
+  }
 
   function listenEnterChatPage() {
     const $app = $('#app');
