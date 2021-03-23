@@ -58,9 +58,10 @@
     "workbox-webpack-plugin": "^5.0.0"
   },
   "dependencies": {
+    "axios": "^0.21.1",
     "copy-webpack-plugin": "^6.2.1",
     "jquery": "^3.4.1",
-    "axios": "^0.21.1"
+    "rxjs": "^6.6.6"
   },
   "browserslist": {
     "development": [

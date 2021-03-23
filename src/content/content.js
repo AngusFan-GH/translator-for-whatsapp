@@ -1,4 +1,5 @@
 import $ from 'jquery';
+import { fromEvent } from 'rxjs';
 import './content.css';
 import { TRANSLATIO_NDISPLAY_MODE, LANGUAGES_TO_CHINESE } from '../common/scripts/modal';
 import { LANGUAGES, BROWSER_LANGUAGES_MAP } from '../common/scripts/languages';
@@ -22,7 +23,8 @@ $(async () => {
 
   function listenEnterChatPage() {
     const $app = $('#app');
-    $app.bind('DOMNodeInserted', e => {
+    const appDOMNodeInserted$ = fromEvent($app, 'DOMNodeInserted');
+    appDOMNodeInserted$.subscribe(e => {
       const $target = $(e.target);
       const id = $target.attr('id');
       const className = $target.prop('className');
@@ -45,7 +47,8 @@ $(async () => {
 
   function listenLeaveChatPage() {
     const $app = $('#app');
-    $app.bind('DOMNodeRemoved', e => {
+    const appDOMNodeRemoved$ = fromEvent($app, 'DOMNodeRemoved');
+    appDOMNodeRemoved$.subscribe(e => {
       const $target = $(e.target);
       const id = $target.attr('id');
       if (typeof id === 'string' && 'main' === id) {
