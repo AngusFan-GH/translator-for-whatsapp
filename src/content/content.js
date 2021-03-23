@@ -16,13 +16,11 @@ $(async () => {
       const className = $target.prop('className');
       if (typeof className === 'string' && className.includes('two')) {
         const $friendContainer = $target.find('#pane-side [role="region"] [role="option"] > div');
-        console.log($friendContainer);
         const friendList = Array.from($friendContainer).reduce((list, friend) => {
           const friendId = $(friend).find('> div:nth-child(2) > div:nth-child(1) span > span').text();
           list.push(friendId);
           return list;
         }, []);
-        console.log(friendList);
         chrome.runtime.sendMessage({ setFriendList: friendList });
       }
       if (typeof id === 'string' && 'main' === id) {
@@ -46,28 +44,33 @@ $(async () => {
     });
   }
 
+  function getCurrentFriend() {
+    const friend = $('#main header > div:nth-child(2) > div:nth-child(1) span').text();
+    chrome.runtime.sendMessage({ setCurrentFriend: friend }, () => rerenderDefaultText());
+  }
+
   function cacheUnsentText(tText, sText) {
-    console.log(tText, sText);
+    chrome.runtime.sendMessage({ cacheUnsentText: { tText, sText } });
   }
 
   function rerenderDefaultText() {
-    const $ipt = $('#main footer:not(#tfw_input_container) .copyable-area .copyable-text.selectable-text');
-    const $injectIpt = $('#main footer#tfw_input_container .copyable-area .copyable-text.selectable-text');
-    $injectIpt.focus(e => {
-      setCaret(e.target);
-      $(e.target).parent().addClass('focused');
-    });
-    setTimeout(() => {
+    chrome.storage.sync.get(['CurrentFriends', 'CacheUnsentTextMap'], ({ CurrentFriends, CacheUnsentTextMap }) => {
+      const { tText, sText } = CacheUnsentTextMap[CurrentFriends];
+      cacheUnsentText('', '');
+      const $ipt = $('#main footer:not(#tfw_input_container) .copyable-area .copyable-text.selectable-text');
+      const $injectIpt = $('#main footer#tfw_input_container .copyable-area .copyable-text.selectable-text');
+      const $placeholder = $injectIpt.prev();
       $ipt.text('');
       $ipt.focus();
-      document.execCommand('insertText', false, 'How r u?');
+      document.execCommand('insertText', false, tText);
+      $injectIpt.text('');
+      $injectIpt.focus();
+      document.execCommand('insertText', false, sText);
       setTimeout(() => {
         window.getSelection().removeAllRanges();
-        $injectIpt.text('');
         $injectIpt.focus();
-        document.execCommand('insertText', false, '你好么？');
       }, 0);
-    }, 0);
+    });
   }
 
   function injectInputContainer() {
@@ -88,11 +91,11 @@ $(async () => {
     $copyableArea.empty().append([$selectContainer, $textArea, $btn]);
     $footer.empty().append($copyableArea);
     $('#main').append($footer);
-    rerenderDefaultText();
     defaultTranslatorChange();
     clickTranslateBtn();
     listenInputValueChange();
     addTranslateFlag();
+    getCurrentFriend();
   }
 
   function addTranslateFlag() {
@@ -210,9 +213,9 @@ $(async () => {
     });
     $input.bind('DOMSubtreeModified', (e) => {
       if (e.target.innerText.trim()) {
-        $placeholder.hide();
+        $placeholder.css({'visibility': 'hidden' });
       } else {
-        $placeholder.show();
+        $placeholder.css({'visibility': 'initial' });
         e.target.innerText = '';
       }
     });

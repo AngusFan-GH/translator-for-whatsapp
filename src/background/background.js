@@ -63,7 +63,7 @@ chrome.runtime.onMessage.addListener((request, sender, reponse) => {
   }
   if (request.setFriendList) {
     request.setFriendList.reduce((textList, firend) => {
-      textList[escape(firend)] = {
+      textList[escape(firend.replace(' ', ''))] = {
         tText: '',
         sText: '',
       };
@@ -74,7 +74,18 @@ chrome.runtime.onMessage.addListener((request, sender, reponse) => {
     });
     return true;
   }
-  if (request.getUnsentText) {
+  if (request.setCurrentFriend) {
+    DEFAULT_SETTINGS.CurrentFriends = escape(request.setCurrentFriend.replace(' ', ''));
+    chrome.storage.sync.set({ CurrentFriends: DEFAULT_SETTINGS.CurrentFriends }, () => {
+      reponse(DEFAULT_SETTINGS.CurrentFriends)
+    });
+    return true;
+  }
+  if (request.cacheUnsentText) {
+    chrome.storage.sync.get(['CurrentFriends', 'CacheUnsentTextMap'], ({ CurrentFriends, CacheUnsentTextMap }) => {
+      CacheUnsentTextMap[CurrentFriends] = request.cacheUnsentText;
+      chrome.storage.sync.set({ CacheUnsentTextMap }, () => reponse(CacheUnsentTextMap));
+    });
     return true;
   }
 });
