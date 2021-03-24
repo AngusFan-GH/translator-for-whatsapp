@@ -1,6 +1,6 @@
 import { BROWSER_LANGUAGES_MAP, LANGUAGES } from '../common/scripts/languages.js';
 import TRANSLATOR_MANAGER from './library/translate.js';
-import initWindow from './handle-window';
+import { initWindow, TABID } from './handle-window';
 
 const DEFAULT_SETTINGS = {
   languageSetting: {
@@ -14,6 +14,10 @@ const DEFAULT_SETTINGS = {
   CacheUnsentTextMap: {},
   OtherSettings: {
     TranslationDisplayMode: 0
+  },
+  Styles: {
+    lineColor: '#EC1C23',
+    textColor: '#00A1E7'
   }
 }
 
@@ -30,11 +34,9 @@ chrome.runtime.onInstalled.addListener(() => {
 chrome.runtime.onMessage.addListener((request, sender, reponse) => {
   if (request.translateMessage) {
     TRANSLATOR_MANAGER.translate(request.translateMessage).then(result => reponse(result));
-    return true;
   }
   if (request.translateInput) {
     TRANSLATOR_MANAGER.translate(request.translateInput, true).then(result => reponse(result));
-    return true;
   }
   if (request.setLanguageSetting) {
     const { from } = request.setLanguageSetting;
@@ -51,15 +53,12 @@ chrome.runtime.onMessage.addListener((request, sender, reponse) => {
         TRANSLATOR_MANAGER.updateLanguageSetting({ [target]: language }).then(() => reponse());
         break;
     }
-    return true;
   }
   if (request.changeDefaultTranslator) {
     TRANSLATOR_MANAGER.updateDefaultTranslator(request.changeDefaultTranslator).then(result => reponse(result));
-    return true;
   }
   if (request.getSupportLanguage) {
     TRANSLATOR_MANAGER.getSupportLanguage().then(result => reponse(result));
-    return true;
   }
   if (request.setFriendList) {
     request.setFriendList.reduce((textList, firend) => {
@@ -72,21 +71,18 @@ chrome.runtime.onMessage.addListener((request, sender, reponse) => {
     chrome.storage.sync.set({ CacheUnsentTextMap: DEFAULT_SETTINGS.CacheUnsentTextMap }, () => {
       reponse(DEFAULT_SETTINGS.CacheUnsentTextMap)
     });
-    return true;
   }
   if (request.setCurrentFriend) {
     DEFAULT_SETTINGS.CurrentFriends = escape(request.setCurrentFriend.replace(' ', ''));
     chrome.storage.sync.set({ CurrentFriends: DEFAULT_SETTINGS.CurrentFriends }, () => {
       reponse(DEFAULT_SETTINGS.CurrentFriends)
     });
-    return true;
   }
   if (request.cacheUnsentText) {
     chrome.storage.sync.get(['CurrentFriends', 'CacheUnsentTextMap'], ({ CurrentFriends, CacheUnsentTextMap }) => {
       CacheUnsentTextMap[CurrentFriends] = request.cacheUnsentText;
       chrome.storage.sync.set({ CacheUnsentTextMap }, () => reponse(CacheUnsentTextMap));
     });
-    return true;
   }
   if (request.updateFriendList) {
     chrome.storage.sync.get('CacheUnsentTextMap', ({ CacheUnsentTextMap }) => {
@@ -94,8 +90,22 @@ chrome.runtime.onMessage.addListener((request, sender, reponse) => {
       CacheUnsentTextMap[friend] = { tText: '', sText: '' };
       chrome.storage.sync.set({ CacheUnsentTextMap }, () => reponse(CacheUnsentTextMap));
     });
-    return true;
   }
+  if (request.changeStyles) {
+    const { target, color } = request.changeStyles;
+    chrome.storage.sync.get('Styles', ({ Styles }) => {
+      switch (target) {
+        case 'line':
+          Styles.lineColor = color;
+          break;
+        case 'text':
+          Styles.textColor = color;
+          break;
+      }
+      chrome.storage.sync.set({ Styles });
+    });
+  }
+  return true;
 });
 
 function setDefaultSettings(result, settings) {

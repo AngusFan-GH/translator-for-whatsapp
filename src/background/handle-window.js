@@ -2,8 +2,12 @@ const HOST = 'web.whatsapp.com';
 const HREF = 'https://'.concat(HOST, '/');
 let ISINSTALLED = false;
 let WINDOWID = 0;
-
-export default function initWindow() {
+let TABID = 0;
+export {
+    initWindow,
+    TABID
+}
+function initWindow() {
     chrome.runtime.onInstalled.addListener(({ reason }) => {
         if (reason !== 'install') return openWindows();
         handleInstalled();
@@ -77,9 +81,10 @@ function createWindow() {
         width: heigth,
         height: width,
         type: 'panel',
-    }, ({ id }) => {
+    }, (window) => {
         ISINSTALLED = true;
-        WINDOWID = id;
+        WINDOWID = window.id;
+        TABID = window.tabs[0].id;
         chrome.browserAction.setIcon({
             path: {
                 19: 'icons/19.png',

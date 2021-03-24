@@ -58,6 +58,7 @@
     "workbox-webpack-plugin": "^5.0.0"
   },
   "dependencies": {
+    "@eastdesire/jscolor": "^2.4.5",
     "axios": "^0.21.1",
     "copy-webpack-plugin": "^6.2.1",
     "jquery": "^3.4.1",

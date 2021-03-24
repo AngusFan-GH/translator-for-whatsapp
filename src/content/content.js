@@ -394,7 +394,23 @@ $(async () => {
         $div = $($container.find('.tfw_translate_result').get(0));
       } else {
         $div = $('<div class="tfw_translate_result"></div>');
+        chrome.storage.sync.get('Styles', ({ Styles }) => {
+          const { lineColor, textColor } = Styles;
+          $div.css({
+            color: textColor,
+            borderTopColor: lineColor
+          });
+        });
       }
+      chrome.storage.onChanged.addListener((changes, area) => {
+        if (area === "sync" && changes["Styles"]) {
+          const { lineColor, textColor } = changes["Styles"].newValue;
+          $div.css({
+            color: textColor,
+            borderTopColor: lineColor
+          });
+        }
+      });
       $div.text(e.mainMeaning);
       $div.append($('<span class="placeholder"></span>'));
       $container.append($div);
