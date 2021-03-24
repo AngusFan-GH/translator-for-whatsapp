@@ -4,7 +4,9 @@ const OptimizeCssAssetsWebpackPlugin = require('optimize-css-assets-webpack-plug
 const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const FileManagerPlugin = require('filemanager-webpack-plugin');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
 const { name, version } = require('./package.json');
+const { options } = require('less');
 
 const commonCssLoader = [
     MiniCssExtractPlugin.loader,
@@ -21,7 +23,8 @@ const commonCssLoader = [
 module.exports = {
     entry: {
         'background': ['./src/background/background.js'],
-        'content': ['./src/content/content.js']
+        'content': ['./src/content/content.js'],
+        'options': ['./src/options/options.js'],
     },
     output: {
         path: resolve(__dirname, 'build/' + name + '-v' + version),
@@ -90,6 +93,15 @@ module.exports = {
             filename: '[name]/[name].css'
         }),
         new OptimizeCssAssetsWebpackPlugin(),
+        new HtmlWebpackPlugin({
+            template: './src/options/options.html',
+            filename: 'options/options.html',
+            chunks: ['options'],
+            minify: {
+              collapseWhitespace: true,
+              removeComments: true
+            }
+          }),
         new CleanWebpackPlugin(),
         new CopyWebpackPlugin({
             patterns: [
