@@ -13,7 +13,7 @@ const DEFAULT_SETTINGS = {
   CurrentFriends: '',
   CacheUnsentTextMap: {},
   OtherSettings: {
-    TranslationDisplayMode: 0
+    TranslationDisplayMode: 2
   },
   Styles: {
     lineColor: '#EC1C23',

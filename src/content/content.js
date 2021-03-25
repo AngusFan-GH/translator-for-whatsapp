@@ -5,7 +5,7 @@ import { TRANSLATIO_NDISPLAY_MODE, LANGUAGES_TO_CHINESE } from '../common/script
 import { LANGUAGES, BROWSER_LANGUAGES_MAP } from '../common/scripts/languages';
 
 $(async () => {
-  let TranslationDisplayMode = 1;
+  let TranslationDisplayMode = 2;
   listenFriendListChange();
   listenEnterChatPage();
   listenLeaveChatPage();
