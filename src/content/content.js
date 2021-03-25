@@ -447,7 +447,7 @@ $(() => {
             const $target = $(e.target);
             const className = $target.prop('className');
             if (typeof className === 'string' && className.includes('focusable-list-item')) {
-                const $newMsg = $target.find('div.copyable-text:not(.selectable-text) span.selectable-text.copyable-text');
+                const $newMsg = $target.find('div.copyable-text:not(.selectable-text) span.selectable-text.copyable-text:not(:has(> span > a))');
                 if (!$newMsg.length) return;
                 try {
                     const { TranslationDisplayMode } = await Storager.get('TranslationDisplayMode');
