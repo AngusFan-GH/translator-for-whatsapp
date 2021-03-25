@@ -2,6 +2,7 @@ import { BROWSER_LANGUAGES_MAP, LANGUAGES } from '../common/scripts/languages';
 import TRANSLATOR_MANAGER from './library/translate';
 import { initWindow } from './handle-window';
 import Storager from '../common/scripts/storage';
+import { deepCopy } from '../common/scripts/util';
 
 const DEFAULT_SETTINGS = {
     languageSetting: {
@@ -11,11 +12,10 @@ const DEFAULT_SETTINGS = {
         set: Object.keys(LANGUAGES),
     },
     DefaultTranslator: 'GoogleTranslate',
+    TranslationDisplayMode: 2,
     CurrentFriends: '',
     CacheUnsentTextMap: {},
-    OtherSettings: {
-        TranslationDisplayMode: 2,
-    },
+    OtherSettings: {},
     Styles: {
         lineColor: '#EC1C23',
         textColor: '#00A1E7',
@@ -28,7 +28,7 @@ chrome.runtime.onInstalled.addListener(async () => {
     try {
         const result = await Storager.get(null);
         setDefaultSettings(result, DEFAULT_SETTINGS);
-        Storager.set(result);
+        Storager.set(deepCopy(result));
     } catch (err) {
         console.error(err);
     }
@@ -134,10 +134,11 @@ async function changeStyles(changeStyles) {
 
 function setDefaultSettings(result, settings) {
     for (const i in settings) {
-        if (Object.prototype.toString.call(settings[i]) === '[object Object]') {
-            result[i] = result[i] ? setDefaultSettings(result[i], settings[i]) : settings[i];
+        if (settings[i] instanceof Object) {
+            result[i] = setDefaultSettings(result[i], settings[i]);
             continue;
         }
         result[i] = result[i] == null ? settings[i] : result[i];
     }
+    return result;
 }

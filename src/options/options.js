@@ -24,7 +24,7 @@ $(function () {
             const textPicker = new Jscolor($textInput[0]);
             textPicker.fromString(textColor);
         });
-        
+
         $('.color-picker').on('change', (e) => {
             const target = $(e.target).attr('data-target');
             const color = $(e.target).val();

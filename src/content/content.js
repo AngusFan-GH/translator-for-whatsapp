@@ -4,9 +4,7 @@ import { fromEvent } from 'rxjs';
 import { TRANSLATIO_NDISPLAY_MODE, LANGUAGES_TO_CHINESE } from '../common/scripts/modal';
 import { LANGUAGES, BROWSER_LANGUAGES_MAP } from '../common/scripts/languages';
 import Storager from '../common/scripts/storage';
-
-$(async () => {
-    let TranslationDisplayMode = 2;
+$(() => {
     listenFriendListChange();
     listenEnterChatPage();
     listenLeaveChatPage();
@@ -91,29 +89,32 @@ $(async () => {
         }
     }
 
-    function injectInputContainer() {
+    async function injectInputContainer() {
         const $footer = $('#main footer').clone().attr('id', 'tfw_input_container');
         const $copyableArea = $($footer.children('.copyable-area').get(0));
         const $selectContainer = $($copyableArea.children('div').get(0));
-        $selectContainer.html($(`
-      <select class="default_translator">
-        <option value="GoogleTranslate">谷歌翻译</option>
-        <option value="BingTranslate">必应翻译</option>
-        <option value="BaiduTranslate">百度翻译</option>
-      </select>
-    `));
+        $selectContainer.html($(`<select class="default_translator">
+            <option value="GoogleTranslate">谷歌翻译</option>
+            <option value="BingTranslate">必应翻译</option>
+            <option value="BaiduTranslate">百度翻译</option>
+        </select>`));
         const $textArea = $($copyableArea.children('div').get(1)).addClass('translate_area');
-        const $btn = $(`
-      <button class="translate_btn">${TRANSLATIO_NDISPLAY_MODE[TranslationDisplayMode]}</button>
-    `);
-        $copyableArea.empty().append([$selectContainer, $textArea, $btn]);
-        $footer.empty().append($copyableArea);
-        $('#main').append($footer);
-        defaultTranslatorChange();
-        clickTranslateBtn();
-        listenInputValueChange();
-        addTranslateFlag();
-        getCurrentFriend();
+        try {
+            const { TranslationDisplayMode } = await Storager.get('TranslationDisplayMode');
+            const $btn = $(`
+                <button class="translate_btn">${TRANSLATIO_NDISPLAY_MODE[TranslationDisplayMode]}</button>
+            `);
+            $copyableArea.empty().append([$selectContainer, $textArea, $btn]);
+            $footer.empty().append($copyableArea);
+            $('#main').append($footer);
+            defaultTranslatorChange();
+            clickTranslateBtn();
+            listenInputValueChange();
+            addTranslateFlag();
+            getCurrentFriend();
+        } catch (err) {
+            console.error(err);
+        }
     }
 
     function addTranslateFlag() {
@@ -311,34 +312,47 @@ $(async () => {
 
     function clickTranslateBtn() {
         const $translateBtn = $('#tfw_input_container .translate_btn');
-        $translateBtn.click(() => {
-            if (++TranslationDisplayMode >= TRANSLATIO_NDISPLAY_MODE.length) {
-                TranslationDisplayMode = 0;
+        const translateBtnClick$ = fromEvent($translateBtn, 'click');
+
+        translateBtnClick$.subscribe(async () => {
+            try {
+                let { TranslationDisplayMode } = await Storager.get('TranslationDisplayMode');
+                if (++TranslationDisplayMode >= TRANSLATIO_NDISPLAY_MODE.length) {
+                    TranslationDisplayMode = 0;
+                }
+                Storager.set({ TranslationDisplayMode }).then(() => {
+                    $translateBtn.text(TRANSLATIO_NDISPLAY_MODE[TranslationDisplayMode]);
+                    renderMessageList();
+                });
+            } catch (err) {
+                console.error(err);
             }
-            $translateBtn.text(TRANSLATIO_NDISPLAY_MODE[TranslationDisplayMode]);
-            renderMessageList();
         });
     }
 
-    function renderMessageList(isAutoDetect = false) {
+    async function renderMessageList(isAutoDetect = false) {
         const $msgList = $('#main .copyable-area .focusable-list-item div.copyable-text:not(.selectable-text) span.selectable-text.copyable-text:not(:has(> span > a))');
         if (isAutoDetect && $msgList.length) {
             const $last = $msgList.last();
             setLanguageSetting($last);
         }
-
-        switch (TranslationDisplayMode) {
-            case 1:
-                Array.from($msgList).reverse().forEach(msg => renderTranslateResult($(msg), true));
-                break;
-            case 2:
-                $('#main .tfw_translate_result').show();
-                Array.from($msgList).reverse().forEach(msg => renderTranslateResult($(msg)));
-                break;
-            default:
-                $msgList.parent().show();
-                $('#main .tfw_translate_result').hide();
-                break;
+        try {
+            const { TranslationDisplayMode } = await Storager.get('TranslationDisplayMode');
+            switch (TranslationDisplayMode) {
+                case 1:
+                    Array.from($msgList).reverse().forEach(msg => renderTranslateResult($(msg), true));
+                    break;
+                case 2:
+                    $('#main .tfw_translate_result').show();
+                    Array.from($msgList).reverse().forEach(msg => renderTranslateResult($(msg)));
+                    break;
+                default:
+                    $msgList.parent().show();
+                    $('#main .tfw_translate_result').hide();
+                    break;
+            }
+        } catch (err) {
+            console.error(err);
         }
 
     }
@@ -428,19 +442,25 @@ $(async () => {
 
     function listenMessageListChange() {
         const $msgListContaienr = $('#main .copyable-area .focusable-list-item').parent();
-        $msgListContaienr.bind('DOMNodeInserted', e => {
+        const msgListContaienrDOMNodeInserted$ = fromEvent($msgListContaienr, 'DOMNodeInserted');
+        msgListContaienrDOMNodeInserted$.subscribe(async e => {
             const $target = $(e.target);
             const className = $target.prop('className');
             if (typeof className === 'string' && className.includes('focusable-list-item')) {
                 const $newMsg = $target.find('div.copyable-text:not(.selectable-text) span.selectable-text.copyable-text');
                 if (!$newMsg.length) return;
-                switch (TranslationDisplayMode) {
-                    case 1:
-                        renderTranslateResult($newMsg, true);
-                        break;
-                    case 2:
-                        renderTranslateResult($newMsg);
-                        break;
+                try {
+                    const { TranslationDisplayMode } = await Storager.get('TranslationDisplayMode');
+                    switch (TranslationDisplayMode) {
+                        case 1:
+                            renderTranslateResult($newMsg, true);
+                            break;
+                        case 2:
+                            renderTranslateResult($newMsg);
+                            break;
+                    }
+                } catch (err) {
+                    console.error(err);
                 }
             }
         });
