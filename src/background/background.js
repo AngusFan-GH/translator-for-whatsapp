@@ -27,7 +27,9 @@ initWindow();
 chrome.runtime.onInstalled.addListener(async () => {
     try {
         const result = await Storager.get(null);
+        console.log(result);
         setDefaultSettings(result, DEFAULT_SETTINGS);
+        console.log(result);
         Storager.set(deepCopy(result));
     } catch (err) {
         console.error(err);
@@ -135,10 +137,10 @@ async function changeStyles(changeStyles) {
 function setDefaultSettings(result, settings) {
     for (const i in settings) {
         if (settings[i] instanceof Object) {
-            result[i] = setDefaultSettings(result[i], settings[i]);
+            result[i] = Object.create(settings[i].constructor.prototype)
+            setDefaultSettings(result[i], settings[i]);
             continue;
         }
         result[i] = result[i] == null ? settings[i] : result[i];
     }
-    return result;
 }
