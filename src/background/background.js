@@ -134,11 +134,7 @@ async function changeStyles(changeStyles) {
 
 function setDefaultSettings(result, settings) {
     for (let i in settings) {
-        if (
-            typeof settings[i] === "object" &&
-            !(settings[i] instanceof Array) &&
-            Object.keys(settings[i]).length > 0
-        ) {
+        if (settings[i] instanceof Object) {
             if (result[i]) {
                 setDefaultSettings(result[i], settings[i]);
             } else {
