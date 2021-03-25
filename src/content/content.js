@@ -1,6 +1,6 @@
+import './content.css';
 import $ from 'jquery';
 import { fromEvent } from 'rxjs';
-import './content.css';
 import { TRANSLATIO_NDISPLAY_MODE, LANGUAGES_TO_CHINESE } from '../common/scripts/modal';
 import { LANGUAGES, BROWSER_LANGUAGES_MAP } from '../common/scripts/languages';
 import Storager from '../common/scripts/storage';
@@ -69,15 +69,16 @@ $(async () => {
         chrome.runtime.sendMessage({ cacheUnsentText: { tText, sText } });
     }
 
-    function rerenderDefaultText() {
-        chrome.storage.sync.get(['CurrentFriends', 'CacheUnsentTextMap'], ({ CurrentFriends, CacheUnsentTextMap }) => {
+    async function rerenderDefaultText() {
+        try {
+            const { CurrentFriends, CacheUnsentTextMap } = await Storager.get(['CurrentFriends', 'CacheUnsentTextMap']);
             const { tText, sText } = CacheUnsentTextMap[CurrentFriends];
             cacheUnsentText('', '');
             const $ipt = $('#main footer:not(#tfw_input_container) .copyable-area .copyable-text.selectable-text');
-            const $injectIpt = $('#main footer#tfw_input_container .copyable-area .copyable-text.selectable-text');
             $ipt.text('');
             $ipt.focus();
             document.execCommand('insertText', false, tText);
+            const $injectIpt = $('#main footer#tfw_input_container .copyable-area .copyable-text.selectable-text');
             $injectIpt.text('');
             $injectIpt.focus();
             document.execCommand('insertText', false, sText);
@@ -85,7 +86,9 @@ $(async () => {
                 window.getSelection().removeAllRanges();
                 $injectIpt.focus();
             }, 0);
-        });
+        } catch (err) {
+            console.error(err);
+        }
     }
 
     function injectInputContainer() {
@@ -116,81 +119,80 @@ $(async () => {
     function addTranslateFlag() {
         const $ipt = $('#main footer:not(#tfw_input_container) .copyable-area .copyable-text.selectable-text');
         const $injectIpt = $($('#tfw_input_container .translate_area > div').children('div').get(1));
-        chrome.storage.sync.get(
-            'languageSetting',
-            ({ languageSetting }) => {
-                const { tl, s2 } = languageSetting;
-                $ipt.after($(`<div class="translate_flag">
-                    <span class="translate_flag_button" data-target="s2" data-lg="${s2}">${getChinese(s2)}</span>
-                </div>`));
-                $injectIpt.after($(`<div class="translate_flag">
-                    <span class="translate_flag_button" data-target="tl" data-lg="${tl}">${getChinese(tl)}</span>
-                </div>`));
-                $('#main footer .translate_flag .translate_flag_button').click(event => {
-                    const $button = $(event.target);
-                    const $container = $('#main');
-                    const buttonTarget = $button.attr('data-target');
-                    const buttonLg = $button.attr('data-lg');
-                    const $selectContainer = $('<div class="translate_flag_select_container"></div>');
-                    const $selectSearch = $(`<input class="translate_flag_select_search" type="text" autocomplete="off" placeholder="输入语种"/>`);
-                    $selectContainer.append($selectSearch);
-                    chrome.runtime.sendMessage({ getSupportLanguage: true }, (languages) => {
-                        const languageSet = handleSelectLanguages(languages).reduce((set, lg) => {
-                            if (lg === buttonLg) return set;
-                            const $lgTmpl = $(`<li data-lg="${lg}">${getChinese(lg)}</li>`);
-                            $lgTmpl.click(e => {
-                                chrome.runtime.sendMessage({
-                                    setLanguageSetting: {
-                                        from: 'select',
-                                        language: $(e.target).attr('data-lg'),
-                                        target: buttonTarget
-                                    }
-                                }, () => {
-                                    $selectContainer.remove();
-                                    if (buttonTarget === 'tl') renderMessageList();
-                                });
+        Storager.get('languageSetting').then(({ languageSetting }) => {
+            const { tl, s2 } = languageSetting;
+            $ipt.after($(`<div class="translate_flag">
+                <span class="translate_flag_button" data-target="s2" data-lg="${s2}">${getChinese(s2)}</span>
+            </div>`));
+            $injectIpt.after($(`<div class="translate_flag">
+                <span class="translate_flag_button" data-target="tl" data-lg="${tl}">${getChinese(tl)}</span>
+            </div>`));
+            const flagButtonClick$ = fromEvent($('#main footer .translate_flag .translate_flag_button'), 'click');
+            flagButtonClick$.subscribe(event => {
+                const $button = $(event.target);
+                const $container = $('#main');
+                const buttonTarget = $button.attr('data-target');
+                const buttonLg = $button.attr('data-lg');
+                const $selectContainer = $('<div class="translate_flag_select_container"></div>');
+                const $selectSearch = $(`<input class="translate_flag_select_search" type="text" autocomplete="off" placeholder="输入语种"/>`);
+                $selectContainer.append($selectSearch);
+                chrome.runtime.sendMessage({ getSupportLanguage: true }, (languages) => {
+                    const languageSet = handleSelectLanguages(languages).reduce((set, lg) => {
+                        if (lg === buttonLg) return set;
+                        const $lgTmpl = $(`<li data-lg="${lg}">${getChinese(lg)}</li>`);
+                        $lgTmpl.click(e => {
+                            chrome.runtime.sendMessage({
+                                setLanguageSetting: {
+                                    from: 'select',
+                                    language: $(e.target).attr('data-lg'),
+                                    target: buttonTarget
+                                }
+                            }, () => {
+                                $selectContainer.remove();
+                                if (buttonTarget === 'tl') renderMessageList();
                             });
-                            set.push($lgTmpl);
-                            return set;
-                        }, []);
-                        const $selectUl = $('<ul></ul>').append(...languageSet);
-                        const $empty = $('<li class="empty">无匹配项</li>');
-                        $selectUl.append($empty.hide());
-                        const mainWidth = $('#main').width();
-                        const sideWidth = $('#pane-side').width();
-                        $selectContainer.append($selectUl).css({
-                            right: mainWidth + sideWidth - ($button.offset().left + $button.width()) + 'px',
-                            bottom: $('#main').height() + - ($button.offset().top - 5) + 'px'
                         });
-                        $container.append($selectContainer);
-                        $selectSearch.focus();
-                        $selectSearch.on('input propertychange', (e) => {
-                            const text = $(e.target).val().trim();
-                            if (text == null || text === '') {
-                                $('.translate_flag_select_container ul > li').show();
-                                $empty.hide();
-                                return;
-                            }
-                            let count = 0;
-                            languageSet.forEach(lg => {
-                                lg.text().toLowerCase().includes(text.toLowerCase()) ? lg.show() : (count++, lg.hide());
-                            });
-                            if (count === languageSet.length) {
-                                $empty.show();
-                            } else {
-                                $empty.hide();
-                            }
+                        set.push($lgTmpl);
+                        return set;
+                    }, []);
+                    const $selectUl = $('<ul></ul>').append(...languageSet);
+                    const $empty = $('<li class="empty">无匹配项</li>');
+                    $selectUl.append($empty.hide());
+                    const mainWidth = $('#main').width();
+                    const sideWidth = $('#pane-side').width();
+                    $selectContainer.append($selectUl).css({
+                        right: mainWidth + sideWidth - ($button.offset().left + $button.width()) + 'px',
+                        bottom: $('#main').height() + - ($button.offset().top - 5) + 'px'
+                    });
+                    $container.append($selectContainer);
+                    $selectSearch.focus();
+                    $selectSearch.on('input propertychange', (e) => {
+                        const text = $(e.target).val().trim();
+                        if (text == null || text === '') {
+                            $('.translate_flag_select_container ul > li').show();
+                            $empty.hide();
+                            return;
+                        }
+                        let count = 0;
+                        languageSet.forEach(lg => {
+                            lg.text().toLowerCase().includes(text.toLowerCase()) ? lg.show() : (count++, lg.hide());
                         });
+                        if (count === languageSet.length) {
+                            $empty.show();
+                        } else {
+                            $empty.hide();
+                        }
                     });
                 });
-            }
-        );
+            });
+        });
         Storager.onChanged('languageSetting').subscribe(e => {
             const { tl, s2 } = e.newValue;
             $ipt.next().find('.translate_flag_button').attr('data-lg', s2).text(getChinese(s2));
             $injectIpt.next().find('.translate_flag_button').attr('data-lg', tl).text(getChinese(tl));
         });
-        $(document).bind('click', (e) => {
+        const documentClick$ = fromEvent($(document), 'click');
+        documentClick$.subscribe((e) => {
             if ($(e.target).closest('.translate_flag_select_search').length) return;
             const $selectContaienr = $('.translate_flag_select_container');
             if ($selectContaienr.length) $selectContaienr.remove();
@@ -276,10 +278,9 @@ $(async () => {
 
     function defaultTranslatorChange() {
         const $defaultTranslator = $('#tfw_input_container .default_translator');
-        chrome.storage.sync.get('DefaultTranslator', ({ DefaultTranslator }) => {
-            $defaultTranslator.val(DefaultTranslator);
-        });
-        $defaultTranslator.change(e => {
+        Storager.get('DefaultTranslator').then(({ DefaultTranslator }) => $defaultTranslator.val(DefaultTranslator));
+        const defaultTranslatorChange$ = fromEvent($defaultTranslator, 'change');
+        defaultTranslatorChange$.subscribe(e => {
             chrome.runtime.sendMessage({ changeDefaultTranslator: e.target.value }, () => {
                 renderMessageList(true);
                 handleInjectInputTranslateFlag();
@@ -287,9 +288,9 @@ $(async () => {
         });
     }
 
-    function handleInjectInputTranslateFlag() {
-        chrome.storage.sync.get('languageSetting', ({ languageSetting }) => {
-            const { tl } = languageSetting;
+    async function handleInjectInputTranslateFlag() {
+        try {
+            const { tl } = await Storager.get('languageSetting').languageSetting;
             chrome.runtime.sendMessage({ getSupportLanguage: true }, (languages) => {
                 if (languages.indexOf(tl) === -1) {
                     chrome.runtime.sendMessage({
@@ -303,7 +304,9 @@ $(async () => {
                     });
                 }
             });
-        });
+        } catch (err) {
+            console.error(err);
+        }
     }
 
     function clickTranslateBtn() {
@@ -382,13 +385,13 @@ $(async () => {
 
     function handleRenderTranslateResult($el, $container, isHideSource) {
         const text = $($el.children().get(0)).text();
-        chrome.runtime.sendMessage({ translateMessage: text }, (e) => {
+        chrome.runtime.sendMessage({ translateMessage: text }, e => {
             let $div = null;
             if ($container.find('.tfw_translate_result').get(0)) {
                 $div = $($container.find('.tfw_translate_result').get(0));
             } else {
                 $div = $('<div class="tfw_translate_result"></div>');
-                chrome.storage.sync.get('Styles', ({ Styles }) => {
+                Storager.get('Styles').then(({ Styles }) => {
                     const { lineColor, textColor } = Styles;
                     $div.css({
                         color: textColor,
@@ -397,7 +400,6 @@ $(async () => {
                 });
             }
             Storager.onChanged('Styles').subscribe(e => {
-                console.log('onChange', e);
                 const { lineColor, textColor } = e.newValue;
                 $div.css({
                     color: textColor,
@@ -425,12 +427,12 @@ $(async () => {
     }
 
     function listenMessageListChange() {
-        const msgListContaienr = $('#main .copyable-area .focusable-list-item').parent();
-        msgListContaienr.bind('DOMNodeInserted', function (e) {
-            const target = $(e.target);
-            const className = target.prop('className');
+        const $msgListContaienr = $('#main .copyable-area .focusable-list-item').parent();
+        $msgListContaienr.bind('DOMNodeInserted', e => {
+            const $target = $(e.target);
+            const className = $target.prop('className');
             if (typeof className === 'string' && className.includes('focusable-list-item')) {
-                const $newMsg = target.find('div.copyable-text:not(.selectable-text) span.selectable-text.copyable-text');
+                const $newMsg = $target.find('div.copyable-text:not(.selectable-text) span.selectable-text.copyable-text');
                 if (!$newMsg.length) return;
                 switch (TranslationDisplayMode) {
                     case 1:
