@@ -32,14 +32,6 @@ module.exports = {
     },
     module: {
         rules: [
-            {
-                test: /\.css$/,
-                use: [...commonCssLoader]
-            },
-            {
-                test: /\.less$/,
-                use: [...commonCssLoader, 'less-loader']
-            },
             // {
             //     test: /\.js$/,
             //     exclude: /node_modules/,
@@ -50,41 +42,53 @@ module.exports = {
             //     }
             // },
             {
-                test: /\.js$/,
-                exclude: /node_modules/,
-                loader: 'babel-loader',
-                options: {
-                    presets: [
-                        [
-                            '@babel/preset-env',
-                            {
-                                useBuiltIns: 'usage',
-                                corejs: { version: 3 },
-                                targets: {
-                                    chrome: '60',
-                                    firefox: '50'
-                                }
-                            }
-                        ]
-                    ]
-                }
-            },
-            {
-                test: /\.(jpg|png|gif)/,
-                loader: 'url-loader',
-                options: {
-                    limit: 8 * 1024,
-                    name: '[hash:10].[ext]',
-                    outputPath: 'imgs',
-                    esModule: false
-                }
-            },
-            {
-                exclude: /\.(js|css|less|html|jpg|png|gif)/,
-                loader: 'file-loader',
-                options: {
-                    outputPath: 'source'
-                }
+                oneOf: [
+                    {
+                        test: /\.css$/,
+                        use: [...commonCssLoader]
+                    },
+                    {
+                        test: /\.less$/,
+                        use: [...commonCssLoader, 'less-loader']
+                    },
+                    {
+                        test: /\.js$/,
+                        exclude: /node_modules/,
+                        loader: 'babel-loader',
+                        options: {
+                            presets: [
+                                [
+                                    '@babel/preset-env',
+                                    {
+                                        useBuiltIns: 'usage',
+                                        corejs: { version: 3 },
+                                        targets: {
+                                            chrome: '60',
+                                            firefox: '50'
+                                        }
+                                    }
+                                ]
+                            ]
+                        }
+                    },
+                    {
+                        test: /\.(jpg|png|gif)/,
+                        loader: 'url-loader',
+                        options: {
+                            limit: 8 * 1024,
+                            name: '[hash:10].[ext]',
+                            outputPath: 'imgs',
+                            esModule: false
+                        }
+                    },
+                    {
+                        exclude: /\.(js|css|less|html|jpg|png|gif)/,
+                        loader: 'file-loader',
+                        options: {
+                            outputPath: 'source'
+                        }
+                    }
+                ]
             }
         ]
     },
@@ -126,7 +130,7 @@ module.exports = {
                     ]
                 }
             }
-        })
+        }),
     ],
     mode: 'production'
 }

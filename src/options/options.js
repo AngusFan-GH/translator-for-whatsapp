@@ -1,8 +1,8 @@
 import './options.css';
 import $ from 'jquery';
-const jscolor = require('@eastdesire/jscolor');
+import Jscolor from '@eastdesire/jscolor';
 
-jscolor.presets.default = {
+Jscolor.presets.default = {
     position: 'right',
     palette: [
         '#000000', '#7d7d7d', '#870014', '#ec1c23', '#ff7e26',
@@ -18,10 +18,10 @@ $(function () {
         chrome.storage.sync.get('Styles', ({ Styles }) => {
             const { lineColor, textColor } = Styles;
             const $lineInput = $('.color-picker[data-target="line"]');
-            const linePicker = new jscolor($lineInput[0]);
+            const linePicker = new Jscolor($lineInput[0]);
             linePicker.fromString(lineColor);
             const $textInput = $('.color-picker[data-target="text"]');
-            const textPicker = new jscolor($textInput[0]);
+            const textPicker = new Jscolor($textInput[0]);
             textPicker.fromString(textColor);
         });
         
