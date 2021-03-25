@@ -99,7 +99,7 @@ class TranslatorManager {
                 result.targetLanguage = tl;
                 this.TRANSLATE_RESULT_CACHE[this.DEFAULT_TRANSLATOR][escape(sl)][escape(tl)][escape(text)] = result;
                 return Promise.resolve(result);
-            })
+            });
         } catch (error) {
             return Promise.reject(error);
         }

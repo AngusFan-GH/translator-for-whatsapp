@@ -79,7 +79,8 @@
   "eslintConfig": {
     "extends": "airbnb-base",
     "env": {
-      "browser": true
+      "browser": true,
+      "chrome": true
     }
   },
   "sideEffects": [
