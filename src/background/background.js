@@ -5,11 +5,10 @@ import Storager from '../common/scripts/storage';
 import { deepCopy } from '../common/scripts/util';
 
 const DEFAULT_SETTINGS = {
-    languageSetting: {
+    LanguageSetting: {
         sl: 'auto',
         tl: BROWSER_LANGUAGES_MAP[chrome.i18n.getUILanguage()],
         s2: 'en',
-        set: Object.keys(LANGUAGES),
     },
     DefaultTranslator: 'GoogleTranslate',
     TranslationDisplayMode: 2,
@@ -27,9 +26,7 @@ initWindow();
 chrome.runtime.onInstalled.addListener(async () => {
     try {
         const result = await Storager.get(null);
-        console.log(result);
         setDefaultSettings(result, DEFAULT_SETTINGS);
-        console.log(result);
         Storager.set(deepCopy(result));
     } catch (err) {
         console.error(err);
@@ -67,6 +64,7 @@ chrome.runtime.onMessage.addListener((request, sender, reponse) => {
     }
     if (request.setFriendList) {
         request.setFriendList.reduce((textList, firend) => {
+            if (textList[escape(firend.replace(' ', ''))]) return;
             textList[escape(firend.replace(' ', ''))] = {
                 tText: '',
                 sText: '',
@@ -135,12 +133,19 @@ async function changeStyles(changeStyles) {
 }
 
 function setDefaultSettings(result, settings) {
-    for (const i in settings) {
-        if (settings[i] instanceof Object) {
-            result[i] = Object.create(settings[i].constructor.prototype)
-            setDefaultSettings(result[i], settings[i]);
-            continue;
+    for (let i in settings) {
+        if (
+            typeof settings[i] === "object" &&
+            !(settings[i] instanceof Array) &&
+            Object.keys(settings[i]).length > 0
+        ) {
+            if (result[i]) {
+                setDefaultSettings(result[i], settings[i]);
+            } else {
+                result[i] = settings[i];
+            }
+        } else if (result[i] === undefined) {
+            result[i] = settings[i];
         }
-        result[i] = result[i] == null ? settings[i] : result[i];
     }
 }

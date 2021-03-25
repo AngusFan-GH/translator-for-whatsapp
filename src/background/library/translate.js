@@ -35,13 +35,13 @@ class TranslatorManager {
     loadConfig() {
         return new Promise((resolve, reject) => {
             chrome.storage.sync.get(
-                ['DefaultTranslator', 'languageSetting', 'OtherSettings'],
+                ['DefaultTranslator', 'LanguageSetting', 'OtherSettings'],
                 (res) => {
                     if (chrome.runtime.lastError) {
                         reject(chrome.runtime.lastError);
                         return;
                     }
-                    this.LANGUAGE_SETTING = res.languageSetting;
+                    this.LANGUAGE_SETTING = res.LanguageSetting;
                     this.DEFAULT_TRANSLATOR = res.DefaultTranslator;
                     resolve();
                 }
@@ -127,7 +127,7 @@ class TranslatorManager {
      */
     updateLanguageSetting(settings) {
         return new Promise((resolve) => {
-            chrome.storage.sync.set({ languageSetting: Object.assign(this.LANGUAGE_SETTING, settings) }, () => {
+            chrome.storage.sync.set({ LanguageSetting: Object.assign(this.LANGUAGE_SETTING, settings) }, () => {
                 resolve();
             });
         });

@@ -120,8 +120,8 @@ $(() => {
     function addTranslateFlag() {
         const $ipt = $('#main footer:not(#tfw_input_container) .copyable-area .copyable-text.selectable-text');
         const $injectIpt = $($('#tfw_input_container .translate_area > div').children('div').get(1));
-        Storager.get('languageSetting').then(({ languageSetting }) => {
-            const { tl, s2 } = languageSetting;
+        Storager.get('LanguageSetting').then(({ LanguageSetting }) => {
+            const { tl, s2 } = LanguageSetting;
             $ipt.after($(`<div class="translate_flag">
                 <span class="translate_flag_button" data-target="s2" data-lg="${s2}">${getChinese(s2)}</span>
             </div>`));
@@ -187,7 +187,7 @@ $(() => {
                 });
             });
         });
-        Storager.onChanged('languageSetting').subscribe(e => {
+        Storager.onChanged('LanguageSetting').subscribe(e => {
             const { tl, s2 } = e.newValue;
             $ipt.next().find('.translate_flag_button').attr('data-lg', s2).text(getChinese(s2));
             $injectIpt.next().find('.translate_flag_button').attr('data-lg', tl).text(getChinese(tl));
@@ -291,7 +291,8 @@ $(() => {
 
     async function handleInjectInputTranslateFlag() {
         try {
-            const { tl } = await Storager.get('languageSetting').languageSetting;
+            const { LanguageSetting } = await Storager.get('LanguageSetting');
+            const { tl } = LanguageSetting;
             chrome.runtime.sendMessage({ getSupportLanguage: true }, (languages) => {
                 if (languages.indexOf(tl) === -1) {
                     chrome.runtime.sendMessage({
