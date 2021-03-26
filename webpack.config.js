@@ -102,10 +102,10 @@ module.exports = {
             filename: 'options/options.html',
             chunks: ['options'],
             minify: {
-              collapseWhitespace: true,
-              removeComments: true
+                collapseWhitespace: true,
+                removeComments: true
             }
-          }),
+        }),
         new CleanWebpackPlugin(),
         new CopyWebpackPlugin({
             patterns: [
@@ -133,4 +133,4 @@ module.exports = {
         }),
     ],
     mode: 'production'
-}
+};
