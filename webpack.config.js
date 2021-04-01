@@ -6,7 +6,7 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 const FileManagerPlugin = require('filemanager-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const { name, version } = require('./package.json');
-const { options } = require('less');
+const UglifyJS = require("uglify-js");
 
 const commonCssLoader = [
     MiniCssExtractPlugin.loader,
@@ -116,6 +116,13 @@ module.exports = {
                 {
                     from: './src/icons',
                     to: 'icons'
+                },
+                {
+                    from: './src/common/scripts/wapi.js',
+                    to: 'common',
+                    transform(content) {
+                        return UglifyJS.minify(content.toString()).code;
+                    }
                 },
             ]
         }),

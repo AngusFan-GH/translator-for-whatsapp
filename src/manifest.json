@@ -35,6 +35,11 @@
             "run_at": "document_end"
         }
     ],
+    "externally_connectable": {
+        "matches": [
+            "https://web.whatsapp.com/*"
+        ]
+    },
     "options_ui": {
         "page": "./options/options.html",
         "open_in_tab": true,
@@ -42,10 +47,14 @@
     },
     "permissions": [
         "tabs",
+        "activeTab",
         "storage",
         "<all_urls>",
         "webRequest",
         "webRequestBlocking"
+    ],
+    "web_accessible_resources": [
+        "common/wapi.js"
     ],
     "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'"
 }

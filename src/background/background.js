@@ -33,6 +33,10 @@ chrome.runtime.onInstalled.addListener(async () => {
     }
 });
 
+chrome.runtime.onMessageExternal.addListener((request, sender, sendResponse) => {
+    console.log('onMessageExternal', request, sender, sendResponse);
+});
+
 chrome.runtime.onMessage.addListener((request, sender, reponse) => {
     if (request.translateMessage) {
         TRANSLATOR_MANAGER.translate(request.translateMessage).then((result) => reponse(result));

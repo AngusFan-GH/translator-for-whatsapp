@@ -4,12 +4,12 @@ import { fromEvent } from 'rxjs';
 import { TRANSLATIO_NDISPLAY_MODE, LANGUAGES_TO_CHINESE } from '../common/scripts/modal';
 import { LANGUAGES, BROWSER_LANGUAGES_MAP } from '../common/scripts/languages';
 import Storager from '../common/scripts/storage';
+import { injectScriptToPage } from '../common/scripts/injectScript';
 
 $(() => {
     listenFriendListChange();
     listenEnterChatPage();
     listenLeaveChatPage();
-
     function listenFriendListChange() {
         const $friendList = $('#pane-side');
         $friendList.bind('DOMNodeInserted', (e) => {
@@ -29,6 +29,7 @@ $(() => {
             const id = $target.attr('id');
             const className = $target.prop('className');
             if (typeof className === 'string' && className.includes('two')) {
+                injectScriptToPage(); // 注入WAPI脚本
                 const $friendContainer = $target.find('#pane-side [role="region"] [role="option"] > div');
                 const friendList = Array.from($friendContainer).reduce((list, friend) => {
                     const friendId = $(friend).find('> div:nth-child(2) > div:nth-child(1) span > span').text();
