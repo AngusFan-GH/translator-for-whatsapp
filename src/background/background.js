@@ -1,5 +1,5 @@
-import { BROWSER_LANGUAGES_MAP, LANGUAGES } from '../common/scripts/languages';
-import TRANSLATOR_MANAGER from './library/translate';
+import { BROWSER_LANGUAGES_MAP } from '../common/modal/languages';
+import TRANSLATOR_MANAGER from './translate/translate';
 import { initWindow } from './handle-window';
 import Storager from '../common/scripts/storage';
 import { deepCopy } from '../common/scripts/util';
