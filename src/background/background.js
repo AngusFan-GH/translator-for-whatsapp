@@ -1,6 +1,6 @@
 import { BROWSER_LANGUAGES_MAP } from '../common/modal/languages';
 import TRANSLATOR_MANAGER from './translate/translate';
-import { initWindow } from './handle-window';
+import { initWindow, TABID } from './handle-window';
 import Storager from '../common/scripts/storage';
 import { deepCopy } from '../common/scripts/util';
 
@@ -31,10 +31,6 @@ chrome.runtime.onInstalled.addListener(async () => {
     } catch (err) {
         console.error(err);
     }
-});
-
-chrome.runtime.onMessageExternal.addListener((request, sender, sendResponse) => {
-    console.log('onMessageExternal', request, sender, sendResponse);
 });
 
 chrome.runtime.onMessage.addListener((request, sender, reponse) => {
@@ -149,3 +145,9 @@ function setDefaultSettings(result, settings) {
         }
     }
 }
+
+
+
+chrome.runtime.onMessageExternal.addListener((request, sender, sendResponse) => {
+    console.log('onMessageExternal', request, sender, sendResponse);
+});

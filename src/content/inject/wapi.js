@@ -1468,8 +1468,3 @@ WAPI.downloadBuffer = (url) => {
 };
 
 console.log('Store', window.Store);
-
-chrome.runtime.sendMessage(window.extensionId, {
-    extensionId: window.extensionId,
-    Store: window.Store
-});

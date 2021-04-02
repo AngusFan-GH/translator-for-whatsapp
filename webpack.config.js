@@ -25,10 +25,18 @@ module.exports = {
         'background': ['./src/background/background.js'],
         'content': ['./src/content/content.js'],
         'options': ['./src/options/options.js'],
+        'contact': ['./src/content/inject/contact.js'],
     },
     output: {
         path: resolve(__dirname, 'build/' + name + '-v' + version),
-        filename: '[name]/[name].js'
+        filename: (chunkData) => {
+            switch (chunkData.chunk.name) {
+                case 'contact':
+                    return 'content/[name].js';
+                default:
+                    return '[name]/[name].js';
+            }
+        }
     },
     module: {
         rules: [
@@ -118,8 +126,8 @@ module.exports = {
                     to: 'icons'
                 },
                 {
-                    from: './src/common/scripts/wapi.js',
-                    to: 'common',
+                    from: './src/content/inject/wapi.js',
+                    to: 'content',
                     transform(content) {
                         return UglifyJS.minify(content.toString()).code;
                     }
