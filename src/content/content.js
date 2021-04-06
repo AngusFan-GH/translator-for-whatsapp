@@ -1,10 +1,14 @@
 import './content.css';
 import $ from 'jquery';
 import { fromEvent } from 'rxjs';
-import { TRANSLATIO_NDISPLAY_MODE, LANGUAGES_TO_CHINESE } from '../common/modal/modal';
-import { LANGUAGES, BROWSER_LANGUAGES_MAP } from '../common/modal/languages';
+import { TRANSLATIO_NDISPLAY_MODE } from '../common/modal/';
+import { LANGUAGES, BROWSER_LANGUAGES_MAP, LANGUAGES_TO_CHINESE } from '../common/modal/languages';
 import { injectScriptToPage } from './inject/injectScript';
 import Storager from '../common/scripts/storage';
+import Messager from '../common/scripts/messager';
+
+const BACKGROUND = 'background';
+const InjectScript = 'injectScript';
 
 $(() => {
     listenFriendListChange();
@@ -12,11 +16,12 @@ $(() => {
     listenLeaveChatPage();
     function listenFriendListChange() {
         const $friendList = $('#pane-side');
-        $friendList.bind('DOMNodeInserted', (e) => {
+        const friendListDOMNodeInserted$ = fromEvent($friendList, 'DOMNodeInserted');
+        friendListDOMNodeInserted$.subscribe((e) => {
             const $friend = $(e.target).find('[role="option"] > div > div:nth-child(2) > div:nth-child(1) span > span');
             if ($friend.length) {
                 const friendId = $friend.text();
-                chrome.runtime.sendMessage({ updateFriendList: friendId });
+                Messager.send(BACKGROUND, 'updateFriendList', friendId);
             }
         });
     }
@@ -29,14 +34,14 @@ $(() => {
             const id = $target.attr('id');
             const className = $target.prop('className');
             if (typeof className === 'string' && className.includes('two')) {
-                injectScriptToPage(); // 注入WAPI脚本
+                injectScriptToPage(); // 向页面注入脚本
                 const $friendContainer = $target.find('#pane-side [role="region"] [role="option"] > div');
                 const friendList = Array.from($friendContainer).reduce((list, friend) => {
                     const friendId = $(friend).find('> div:nth-child(2) > div:nth-child(1) span > span').text();
                     list.push(friendId);
                     return list;
                 }, []);
-                chrome.runtime.sendMessage({ setFriendList: friendList });
+                Messager.send(BACKGROUND, 'setFriendList', friendList);
             }
             if (typeof id === 'string' && id === 'main') {
                 sendMessageToWebPage();
@@ -64,11 +69,11 @@ $(() => {
 
     function getCurrentFriend() {
         const friend = $('#main header > div:nth-child(2) > div:nth-child(1) span').text();
-        chrome.runtime.sendMessage({ setCurrentFriend: friend }, () => rerenderDefaultText());
+        Messager.send(BACKGROUND, 'setCurrentFriend', friend).then(() => rerenderDefaultText());
     }
 
     function cacheUnsentText(tText, sText) {
-        chrome.runtime.sendMessage({ cacheUnsentText: { tText, sText } });
+        Messager.send(BACKGROUND, 'cacheUnsentText', { tText, sText });
     }
 
     async function rerenderDefaultText() {
@@ -94,6 +99,7 @@ $(() => {
     }
 
     async function injectInputContainer() {
+        if ($('#tfw_input_container').length) $('#tfw_input_container').remove();
         const $footer = $('#main footer').clone().attr('id', 'tfw_input_container');
         const $copyableArea = $($footer.children('.copyable-area').get(0));
         const $selectContainer = $($copyableArea.children('div').get(0));
@@ -141,18 +147,16 @@ $(() => {
                 const $selectContainer = $('<div class="translate_flag_select_container"></div>');
                 const $selectSearch = $('<input class="translate_flag_select_search" type="text" autocomplete="off" placeholder="输入语种"/>');
                 $selectContainer.append($selectSearch);
-                chrome.runtime.sendMessage({ getSupportLanguage: true }, (languages) => {
+                Messager.send(BACKGROUND, 'getSupportLanguage').then((languages) => {
                     const languageSet = handleSelectLanguages(languages).reduce((set, lg) => {
                         if (lg === buttonLg) return set;
                         const $lgTmpl = $(`<li data-lg="${lg}">${getChinese(lg)}</li>`);
                         $lgTmpl.click((e) => {
-                            chrome.runtime.sendMessage({
-                                setLanguageSetting: {
-                                    from: 'select',
-                                    language: $(e.target).attr('data-lg'),
-                                    target: buttonTarget,
-                                },
-                            }, () => {
+                            Messager.send(BACKGROUND, 'setLanguageSetting', {
+                                from: 'select',
+                                language: $(e.target).attr('data-lg'),
+                                target: buttonTarget,
+                            }).then(() => {
                                 $selectContainer.remove();
                                 if (buttonTarget === 'tl') renderMessageList();
                             });
@@ -240,7 +244,7 @@ $(() => {
                 const text = e.target.innerText.trim();
                 if (!text) return;
                 setTimeout(() => $placeholder.hide(), 0);
-                chrome.runtime.sendMessage({ translateInput: text }, (e) => {
+                Messager.send(BACKGROUND, 'translateInput', text).then(e => {
                     $ipt.text('');
                     $ipt.focus();
                     document.execCommand('insertText', false, e.mainMeaning);
@@ -286,7 +290,7 @@ $(() => {
         Storager.get('DefaultTranslator').then(({ DefaultTranslator }) => $defaultTranslator.val(DefaultTranslator));
         const defaultTranslatorChange$ = fromEvent($defaultTranslator, 'change');
         defaultTranslatorChange$.subscribe((e) => {
-            chrome.runtime.sendMessage({ changeDefaultTranslator: e.target.value }, () => {
+            Messager.send(BACKGROUND, 'changeDefaultTranslator', e.target.value).then(() => {
                 renderMessageList(true);
                 handleInjectInputTranslateFlag();
             });
@@ -297,17 +301,13 @@ $(() => {
         try {
             const { LanguageSetting } = await Storager.get('LanguageSetting');
             const { tl } = LanguageSetting;
-            chrome.runtime.sendMessage({ getSupportLanguage: true }, (languages) => {
+            Messager.send(BACKGROUND, 'getSupportLanguage').then((languages) => {
                 if (languages.indexOf(tl) === -1) {
-                    chrome.runtime.sendMessage({
-                        setLanguageSetting: {
-                            from: 'select',
-                            language: BROWSER_LANGUAGES_MAP[chrome.i18n.getUILanguage()],
-                            target: 'tl',
-                        },
-                    }, () => {
-                        renderMessageList();
-                    });
+                    Messager.send(BACKGROUND, 'setLanguageSetting', {
+                        from: 'select',
+                        language: BROWSER_LANGUAGES_MAP[chrome.i18n.getUILanguage()],
+                        target: 'tl',
+                    }).then(() => renderMessageList());
                 }
             });
         } catch (err) {
@@ -363,11 +363,9 @@ $(() => {
 
     function setLanguageSetting($target) {
         const text = $($target.children().get(0)).text();
-        chrome.runtime.sendMessage({
-            setLanguageSetting: {
-                from: 'message',
-                text,
-            },
+        Messager.send(BACKGROUND, 'setLanguageSetting', {
+            from: 'message',
+            text,
         });
     }
 
@@ -403,7 +401,7 @@ $(() => {
 
     function handleRenderTranslateResult($el, $container, isHideSource) {
         const text = $($el.children().get(0)).text();
-        chrome.runtime.sendMessage({ translateMessage: text }, (e) => {
+        Messager.send(BACKGROUND, 'translateMessage', text).then(e => {
             let $div = null;
             if ($container.find('.tfw_translate_result').get(0)) {
                 $div = $($container.find('.tfw_translate_result').get(0));
@@ -471,13 +469,8 @@ $(() => {
     }
 
     function sendMessageToWebPage() {
-        window.postMessage(
-            {
-                from: 'content',
-                data: {
-                    text: 'Hello, web page'
-                }
-            },
-            'https://web.whatsapp.com/');
+        Messager.post(InjectScript, 'test', {
+            text: 'Hello, web page'
+        });
     }
 });

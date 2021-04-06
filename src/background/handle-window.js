@@ -1,11 +1,11 @@
-const HOST = 'web.whatsapp.com';
-const HREF = 'https://'.concat(HOST, '/');
+import { URL } from '../common/modal/';
+
 let ISINSTALLED = false;
 let WINDOWID = 0;
 let TABID = 0;
 
 function validUrl(_url) {
-  return void 0 !== _url && _url.indexOf(HREF) > -1;
+  return void 0 !== _url && _url.indexOf(URL) > -1;
 }
 
 function handleInstalled() {
@@ -16,7 +16,7 @@ function handleInstalled() {
 function openWindows() {
   chrome.tabs.query(
     {
-      url: ''.concat(HREF, '*'),
+      url: ''.concat(URL, '*'),
     },
     (tabs) => {
       const tabIds = tabs.map((t) => t.id);
@@ -33,7 +33,7 @@ function createWindow() {
     top: screen.availTop + screen.availHeight / 2 - width / 2,
   };
   chrome.windows.create({
-    url: HREF,
+    url: URL,
     focused: true,
     left: Math.floor(position.left),
     top: Math.floor(position.top),

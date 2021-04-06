@@ -1,6 +1,7 @@
 import './options.css';
 import $ from 'jquery';
 import Jscolor from '@eastdesire/jscolor';
+import Messager from '../common/scripts/messager';
 
 Jscolor.presets.default = {
   position: 'bottom',
@@ -27,7 +28,8 @@ $(() => {
     $('.color-picker').on('change', (e) => {
       const target = $(e.target).attr('data-target');
       const color = $(e.target).val();
-      chrome.runtime.sendMessage({ changeStyles: { target, color } });
+      Messager.send('background', 'changeStyles', { target, color });
+      // chrome.runtime.sendMessage({ changeStyles: { target, color } });
     });
   }
 
