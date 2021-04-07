@@ -33,7 +33,19 @@ chrome.runtime.onInstalled.addListener(async () => {
         console.error(err);
     }
 });
-
+function setDefaultSettings(result, settings) {
+    for (let i in settings) {
+        if (settings[i] instanceof Object) {
+            if (result[i]) {
+                setDefaultSettings(result[i], settings[i]);
+            } else {
+                result[i] = settings[i];
+            }
+        } else if (result[i] === undefined) {
+            result[i] = settings[i];
+        }
+    }
+}
 function listener(key) {
     return Messager.receive('background', key);
 }
@@ -54,54 +66,6 @@ listener('setLanguageSetting').subscribe(({ data, response }) => {
     }
 });
 listener('changeStyles').subscribe(({ data }) => changeStyles(data));
-listener('translateMessage').subscribe(({ data, response }) => TRANSLATOR_MANAGER.translate(data).then((result) => response(result)));
-listener('translateInput').subscribe(({ data, response }) => TRANSLATOR_MANAGER.translate(data, true).then((result) => response(result)));
-listener('changeDefaultTranslator').subscribe(({ data, response }) => TRANSLATOR_MANAGER.updateDefaultTranslator(data).then((result) => response(result)));
-listener('getSupportLanguage').subscribe(({ response }) => TRANSLATOR_MANAGER.getSupportLanguage().then((result) => response(result)));
-listener('updateFriendList').subscribe(({ data, response }) => updateFriendList(data, response));
-listener('setFriendList').subscribe(({ data, response }) => {
-    data.reduce((textList, firend) => {
-        if (textList[escape(firend.replace(' ', ''))]) return;
-        textList[escape(firend.replace(' ', ''))] = {
-            tText: '',
-            sText: '',
-        };
-        return textList;
-    }, DEFAULT_SETTINGS.CacheUnsentTextMap);
-    Storager.set({ CacheUnsentTextMap: DEFAULT_SETTINGS.CacheUnsentTextMap })
-        .then(() => response(DEFAULT_SETTINGS.CacheUnsentTextMap))
-        .catch(err => console.error(err));
-});
-listener('cacheUnsentText').subscribe(({ data, response }) => cacheUnsentText(data, response));
-
-listener('setCurrentFriend').subscribe(({ data, response }) => {
-    DEFAULT_SETTINGS.CurrentFriends = escape(data.replace(' ', ''));
-    Storager.set({ CurrentFriends: DEFAULT_SETTINGS.CurrentFriends })
-        .then(() => response(DEFAULT_SETTINGS.CurrentFriends))
-        .catch(err => console.error(err));
-});
-
-async function cacheUnsentText(cacheUnsentText, response) {
-    try {
-        const { CurrentFriends, CacheUnsentTextMap } = await Storager.get(['CurrentFriends', 'CacheUnsentTextMap']);
-        CacheUnsentTextMap[CurrentFriends] = cacheUnsentText;
-        Storager.set({ CacheUnsentTextMap }, () => response(CacheUnsentTextMap));
-    } catch (err) {
-        console.error(err);
-    }
-}
-
-async function updateFriendList(updateFriendList, response) {
-    try {
-        const { CacheUnsentTextMap } = await Storager.get('CacheUnsentTextMap');
-        const friend = escape(updateFriendList.replace(' ', ''));
-        CacheUnsentTextMap[friend] = { tText: '', sText: '' };
-        Storager.set({ CacheUnsentTextMap }, () => response(CacheUnsentTextMap));
-    } catch (err) {
-        console.error(err);
-    }
-}
-
 async function changeStyles(changeStyles) {
     try {
         const { target, color } = changeStyles;
@@ -119,21 +83,51 @@ async function changeStyles(changeStyles) {
         console.error(err);
     }
 }
-
-function setDefaultSettings(result, settings) {
-    for (let i in settings) {
-        if (settings[i] instanceof Object) {
-            if (result[i]) {
-                setDefaultSettings(result[i], settings[i]);
-            } else {
-                result[i] = settings[i];
-            }
-        } else if (result[i] === undefined) {
-            result[i] = settings[i];
-        }
+listener('translateMessage').subscribe(({ data, response }) => TRANSLATOR_MANAGER.translate(data).then((result) => response(result)));
+listener('translateInput').subscribe(({ data, response }) => TRANSLATOR_MANAGER.translate(data, true).then((result) => response(result)));
+listener('changeDefaultTranslator').subscribe(({ data, response }) => TRANSLATOR_MANAGER.updateDefaultTranslator(data).then((result) => response(result)));
+listener('getSupportLanguage').subscribe(({ response }) => TRANSLATOR_MANAGER.getSupportLanguage().then((result) => response(result)));
+listener('updateFriendList').subscribe(({ data, response }) => updateFriendList(data, response));
+async function updateFriendList(updateFriendList, response) {
+    try {
+        const { CacheUnsentTextMap } = await Storager.get('CacheUnsentTextMap');
+        const friend = escape(updateFriendList.replace(' ', ''));
+        CacheUnsentTextMap[friend] = { tText: '', sText: '' };
+        Storager.set({ CacheUnsentTextMap }, () => response(CacheUnsentTextMap));
+    } catch (err) {
+        console.error(err);
+    }
+}
+listener('setFriendList').subscribe(({ data, response }) => {
+    data.reduce((textList, firend) => {
+        if (textList[escape(firend.replace(' ', ''))]) return;
+        textList[escape(firend.replace(' ', ''))] = {
+            tText: '',
+            sText: '',
+        };
+        return textList;
+    }, DEFAULT_SETTINGS.CacheUnsentTextMap);
+    Storager.set({ CacheUnsentTextMap: DEFAULT_SETTINGS.CacheUnsentTextMap })
+        .then(() => response(DEFAULT_SETTINGS.CacheUnsentTextMap))
+        .catch(err => console.error(err));
+});
+listener('cacheUnsentText').subscribe(({ data, response }) => cacheUnsentText(data, response));
+async function cacheUnsentText(cacheUnsentText, response) {
+    try {
+        const { CurrentFriends, CacheUnsentTextMap } = await Storager.get(['CurrentFriends', 'CacheUnsentTextMap']);
+        CacheUnsentTextMap[CurrentFriends] = cacheUnsentText;
+        Storager.set({ CacheUnsentTextMap }, () => response(CacheUnsentTextMap));
+    } catch (err) {
+        console.error(err);
     }
 }
 
+listener('setCurrentFriend').subscribe(({ data, response }) => {
+    DEFAULT_SETTINGS.CurrentFriends = escape(data.replace(' ', ''));
+    Storager.set({ CurrentFriends: DEFAULT_SETTINGS.CurrentFriends })
+        .then(() => response(DEFAULT_SETTINGS.CurrentFriends))
+        .catch(err => console.error(err));
+});
 listener('test-response-from-inject').subscribe(({ data, response }) => {
     console.log('onMessageExternal', data, response);
     response('got it!');

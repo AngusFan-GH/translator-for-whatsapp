@@ -1466,5 +1466,3 @@ WAPI.downloadBuffer = (url) => {
         xhr.send(null);
     });
 };
-
-console.log('Store', window.Store);

@@ -28,6 +28,7 @@ function injectScript({ code, file, isFromExtension }) {
       if (!this.readyState || this.readyState === 'loaded' || this.readyState === 'complete') {
         script.onload = script.onreadystatechange = null;
         script.remove();
+        postToExtension('content', 'injectScriptLoaded', file);
       }
     };
   }
@@ -35,7 +36,22 @@ function injectScript({ code, file, isFromExtension }) {
   return true;
 }
 
+function sendToExtension(to, title, message, response) {
+  let data = JSON.stringify({ to, title, message });
+  chrome.runtime.sendMessage(window.extensionId, data, e => {
+    if (chrome.runtime.lastError) console.error(chrome.runtime.lastError);
+    response && response(e);
+  });
+}
+
+function postToExtension(to, title, message) {
+  let data = JSON.stringify({ to, title, message });
+  window.postMessage(data);
+}
+
 export {
   deepCopy,
   injectScript,
+  sendToExtension,
+  postToExtension
 };
