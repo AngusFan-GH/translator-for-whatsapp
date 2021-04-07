@@ -49,6 +49,7 @@ function listenEnterChatPage() {
     });
     const enterChatPage$ = appDOMNodeInserted$.pipe(filter(({ id }) => typeof id === 'string' && id === 'main'));
     enterChatPage$.subscribe(() => {
+        getCurrentFriend();
         renderMessageList(true);
         listenMessageListChange();
         injectInputContainer();
@@ -89,8 +90,8 @@ function listenLeaveChatPage() {
 }
 
 function getCurrentFriend() {
-    const friend = $('#main header > div:nth-child(2) > div:nth-child(1) span').text();
-    Messager.send(BACKGROUND, 'setCurrentFriend', friend).then(() => rerenderDefaultText());
+    const currentId = $('#main .focusable-list-item[data-id]').attr('data-id').split('_')[1];
+    Messager.send(BACKGROUND, 'setCurrentFriend', currentId).then(() => rerenderDefaultText());
 }
 
 function cacheUnsentText(tText, sText) {
@@ -142,7 +143,6 @@ async function injectInputContainer() {
         clickTranslateBtn();
         listenInputValueChange();
         addTranslateFlag();
-        getCurrentFriend();
     } catch (err) {
         console.error(err);
     }
