@@ -7,6 +7,7 @@ module.exports = {
     entry: {
         'background': ['./src/background/background.js'],
         'content': ['./src/content/content.js'],
+        'login': ['./src/content/login.js'],
         'options': ['./src/options/options.js'],
         'contact': ['./src/content/inject/contact.js'],
     },
@@ -15,6 +16,7 @@ module.exports = {
         filename: (chunkData) => {
             switch (chunkData.chunk.name) {
                 case 'contact':
+                case 'login':
                     return 'content/[name].js';
                 default:
                     return '[name]/[name].js';

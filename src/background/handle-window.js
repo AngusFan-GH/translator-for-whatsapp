@@ -1,54 +1,51 @@
-import { URL } from '../common/modal/';
+import { URL, LOGIN_URL } from '../common/modal/';
+import Storager from '../common/scripts/storage';
+import { Subject } from 'rxjs';
+
+const completed$ = new Subject();
 
 let ISINSTALLED = false;
 let WINDOWID = 0;
 let TABID = 0;
 
-function validUrl(_url) {
-  return void 0 !== _url && _url.indexOf(URL) > -1;
-}
-
-function handleInstalled() {
-  // ISINSTALLED ? focuseWindow() : openWindows();
-  ISINSTALLED ? focuseWindow() : createWindow();
-}
-
 function openWindows() {
-  chrome.tabs.query(
-    {
-      url: ''.concat(URL, '*'),
-    },
-    (tabs) => {
-      const tabIds = tabs.map((t) => t.id);
-      chrome.tabs.remove(tabIds, createWindow);
-    },
-  );
+  Storager.get('OpenedTabIds').then(({ OpenedTabIds }) => {
+    if (OpenedTabIds == null) return createWindow();
+    chrome.tabs.query({ active: true }, (tabs) => {
+      const tabId = tabs.find((t) => t.id === OpenedTabIds)?.id;
+      if (tabId) return chrome.tabs.remove(tabId, createWindow);
+      createWindow();
+    });
+  });
 }
 
 function createWindow() {
-  const heigth = 1396;
-  const width = 931;
+  const width = screen.availWidth * 0.8;
+  const height = screen.availHeight * 0.8;
   const position = {
-    left: screen.availLeft + screen.availWidth / 2 - heigth / 2,
-    top: screen.availTop + screen.availHeight / 2 - width / 2,
+    left: screen.availLeft + screen.availWidth / 2 - width / 2,
+    top: screen.availTop + screen.availHeight / 2 - height / 2,
   };
   chrome.windows.create({
-    url: URL,
+    url: LOGIN_URL,
     focused: true,
     left: Math.floor(position.left),
     top: Math.floor(position.top),
-    width: heigth,
-    height: width,
+    width,
+    height,
     type: 'panel',
   }, (window) => {
     ISINSTALLED = true;
     WINDOWID = window.id;
     TABID = window.tabs[0].id;
-    chrome.browserAction.setIcon({
-      path: {
-        19: 'icons/19.png',
-        38: 'icons/38.png',
-      },
+    Storager.set({ OpenedTabIds: TABID }).then(() => {
+      chrome.browserAction.setIcon({
+        path: {
+          19: 'icons/19.png',
+          38: 'icons/38.png',
+        },
+      });
+      completed$.next({ TABID });
     });
   });
 }
@@ -59,20 +56,17 @@ function focuseWindow() {
   });
 }
 
-function initWindow() {
-  chrome.runtime.onInstalled.addListener(({ reason }) => {
-    if (reason !== 'install') return openWindows();
-    handleInstalled();
-  });
+function handleInstalled() {
+  ISINSTALLED ? focuseWindow() : openWindows();
+}
 
-  chrome.browserAction.onClicked.addListener((t) => {
-    handleInstalled();
-  });
+function InitWindow() {
+  chrome.runtime.onInstalled.addListener(() => openWindows());
 
-  chrome.windows.onRemoved.addListener((tabId) => {
-    if (WINDOWID !== tabId) {
-      return;
-    }
+  chrome.browserAction.onClicked.addListener(() => handleInstalled());
+
+  chrome.windows.onRemoved.addListener((windowId) => {
+    if (WINDOWID !== windowId) return;
     ISINSTALLED = false;
     chrome.browserAction.setIcon({
       path: {
@@ -80,24 +74,19 @@ function initWindow() {
         38: 'icons/38_off.png',
       },
     });
-    chrome.browserAction.setBadgeText({
-      text: '',
-    });
+    Storager.set({ OpenedTabIds: null });
   });
 
-  chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-    if (validUrl(changeInfo.url) && tab.windowId !== WINDOWID) {
-      if (ISINSTALLED) {
-        chrome.tabs.remove(tabId);
-        focuseWindow();
-      } else {
-        handleInstalled();
-      }
-    }
+  chrome.tabs.onUpdated.addListener((tabId, { url }, { windowId }) => {
+    if (!url || url.indexOf(URL) < 0 || windowId === WINDOWID) return;
+    if (ISINSTALLED) return chrome.tabs.remove(tabId, focuseWindow);
+    openWindows();
   });
+
+  return completed$;
 }
 
 export {
-  initWindow,
-  TABID,
+  InitWindow,
+  TABID
 };

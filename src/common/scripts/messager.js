@@ -53,7 +53,7 @@ class Messager {
 
     static sendToTab(to, title, message) {
         return handleSender({ to, title, message }, ({ data, resolve, reject }) => {
-            chrome.runtime.sendMessage(TABID, data, e => {
+            chrome.tabs.sendMessage(TABID, data, e => {
                 if (chrome.runtime.lastError) return reject(chrome.runtime.lastError);
                 resolve(e);
             });

@@ -33,6 +33,14 @@
                 "content/content.js"
             ],
             "run_at": "document_end"
+        },
+        {
+            "matches": [
+                "http://scrm-web.cn.utools.club/*"
+            ],
+            "js": [
+                "content/login.js"
+            ]
         }
     ],
     "externally_connectable": {
