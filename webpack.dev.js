@@ -1,12 +1,11 @@
-const { resolve } = require('path');
+const { merge } = require('webpack-merge');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
-const OptimizeCssAssetsWebpackPlugin = require('optimize-css-assets-webpack-plugin');
 const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 const CopyWebpackPlugin = require('copy-webpack-plugin');
-const FileManagerPlugin = require('filemanager-webpack-plugin');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const { name, version } = require('./package.json');
-const UglifyJS = require("uglify-js");
+const common = require('./webpack.common.js');
+
+process.env.NODE_ENV = 'development';
 
 const commonCssLoader = [
     MiniCssExtractPlugin.loader,
@@ -20,24 +19,9 @@ const commonCssLoader = [
     }
 ];
 
-module.exports = {
-    entry: {
-        'background': ['./src/background/background.js'],
-        'content': ['./src/content/content.js'],
-        'options': ['./src/options/options.js'],
-        'contact': ['./src/content/inject/contact.js'],
-    },
-    output: {
-        path: resolve(__dirname, 'build/' + name + '-v' + version),
-        filename: (chunkData) => {
-            switch (chunkData.chunk.name) {
-                case 'contact':
-                    return 'content/[name].js';
-                default:
-                    return '[name]/[name].js';
-            }
-        }
-    },
+module.exports = merge(common, {
+    mode: 'development',
+    devtool: 'inline-source-map',
     module: {
         rules: [
             // {
@@ -104,15 +88,10 @@ module.exports = {
         new MiniCssExtractPlugin({
             filename: '[name]/[name].css'
         }),
-        new OptimizeCssAssetsWebpackPlugin(),
         new HtmlWebpackPlugin({
             template: './src/options/options.html',
             filename: 'options/options.html',
-            chunks: ['options'],
-            minify: {
-                collapseWhitespace: true,
-                removeComments: true
-            }
+            chunks: ['options']
         }),
         new CleanWebpackPlugin(),
         new CopyWebpackPlugin({
@@ -127,25 +106,9 @@ module.exports = {
                 },
                 {
                     from: './src/content/inject/wapi.js',
-                    to: 'content',
-                    transform(content) {
-                        return UglifyJS.minify(content.toString()).code;
-                    }
-                },
-            ]
-        }),
-        new FileManagerPlugin({
-            events: {
-                onEnd: {
-                    archive: [
-                        {
-                            source: './build/' + name + '-v' + version,
-                            destination: './build/' + name + '-v' + version + '.zip'
-                        },
-                    ]
+                    to: 'content'
                 }
-            }
-        }),
-    ],
-    mode: 'production'
-};
+            ]
+        })
+    ]
+});
