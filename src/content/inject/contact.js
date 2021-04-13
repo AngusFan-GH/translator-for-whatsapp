@@ -10,6 +10,9 @@ window.addEventListener(
             case 'getAllChatIds':
                 postToExtension('content', message.responseTitle, window.WAPI.getAllChatIds());
                 break;
+            case 'getAllMessages':
+                sendToExtension('background', message.responseTitle, WAPI.getAllChatIds().map(chatId => WAPI.getAllMessagesInChat(chatId, true)));
+                break;
         }
     },
     false

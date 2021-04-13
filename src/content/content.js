@@ -52,14 +52,24 @@ function listenInjectScriptLoaded() {
 
 function setFriendList() {
     InjectScriptLoaded$.subscribe(() => {
-        const responseTitle = 'responseGetAllChatIds';
-        Messager.post(InjectScript, 'getAllChatIds', { responseTitle });
-        Messager.receive(Content, responseTitle).subscribe(({ data }) => {
-            Messager.send(BACKGROUND, 'setFriendList', data).then(e => {
-                console.log('setFriendList', e);
-            });
+        getAllChatIds();
+        getAllMessages();
+    });
+}
+
+function getAllChatIds() {
+    const responseTitle = 'responseGetAllChatIds';
+    Messager.post(InjectScript, 'getAllChatIds', { responseTitle });
+    Messager.receive(Content, responseTitle).subscribe(({ data }) => {
+        Messager.send(BACKGROUND, 'setFriendList', data).then(e => {
+            console.log('setFriendList', e);
         });
     });
+}
+
+function getAllMessages() {
+    const responseTitle = 'responseGetAllMessages';
+    Messager.post(InjectScript, 'getAllMessages', { responseTitle });
 }
 
 function listenLeaveChatPage() {
@@ -473,11 +483,5 @@ function listenMessageListChange() {
                 console.error(err);
             }
         }
-    });
-}
-
-function sendMessageToWebPage() {
-    Messager.post(InjectScript, 'test', {
-        text: 'Hello, web page'
     });
 }

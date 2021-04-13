@@ -6,6 +6,8 @@ import { deepCopy } from '../common/scripts/util';
 import Messager from '../common/scripts/messager';
 import { Subject } from 'rxjs';
 import { LOGIN_URL, URL } from '../common/modal/';
+import Api from '../common/service/api'
+
 
 const gotToken$ = new Subject();
 const navigateToURL$ = new Subject();
@@ -27,7 +29,7 @@ const DEFAULT_SETTINGS = {
     },
 };
 
-let ACCESS_TOKEN = '';
+let HTTP = null;
 
 chrome.runtime.onInstalled.addListener(async () => {
     try {
@@ -143,9 +145,33 @@ function startListeners() {
     });
     listener('gotNewMessages').subscribe(({ data, response }) => {
         console.log('onMessageExternal', data);
-        const friendIds = data.map(msg => msg.chat.id);
+        const friendIds = data.map(({ id, content, from, to, sender, chat }) => {
+            HTTP.addContactInfo({
+                accountType: 'WhatsApp',
+                pluginClientContactId: id,
+                messageContext: content,
+                messageType: '1',
+                sendAccount: from,
+                sendAccountName: sender.pushname,
+                toAccount: to,
+            }).then(e => console.log(e)).catch(err => console.error(err))
+            return chat.id
+        });
         updateFriendList(friendIds);
         response('got it!');
+    });
+    listener('responseGetAllMessages').subscribe(({ data }) => {
+        const msgs = data.flat(Infinity);
+        console.log('responseGetAllMessages', msgs);
+        msgs.forEach(({ id, content, from, to, sender }) => HTTP.addContactInfo({
+            accountType: 'WhatsApp',
+            pluginClientContactId: id,
+            messageContext: content,
+            messageType: '1',
+            sendAccount: from,
+            sendAccountName: sender.pushname,
+            toAccount: to,
+        }).then(e => console.log(e)).catch(err => console.error(err)));
     });
 }
 
@@ -168,8 +194,9 @@ InitWindow().subscribe(({ TABID }) => {
 
 gotToken$.subscribe(token => {
     console.log('token', token);
-    ACCESS_TOKEN = token;
+    HTTP = Api(token);
 });
+
 navigateToURL$.subscribe(() => startListeners());
 
 
