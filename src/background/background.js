@@ -75,11 +75,15 @@ async function changeStyles(changeStyles) {
     }
 }
 
-async function updateFriendList(friendId, response) {
+async function updateFriendList(friendIds) {
     try {
         const { CacheUnsentTextMap } = await Storager.get('CacheUnsentTextMap');
-        CacheUnsentTextMap[friendId] = { tText: '', sText: '' };
-        Storager.set({ CacheUnsentTextMap }, () => response(CacheUnsentTextMap));
+        friendIds.forEach(id => {
+            if (id && !CacheUnsentTextMap[id]) {
+                CacheUnsentTextMap[id] = { tText: '', sText: '' };
+            }
+        })
+        Storager.set({ CacheUnsentTextMap });
     } catch (err) {
         console.error(err);
     }
@@ -117,7 +121,6 @@ function startListeners() {
     listener('translateInput').subscribe(({ data, response }) => TRANSLATOR_MANAGER.translate(data, true).then((result) => response(result)));
     listener('changeDefaultTranslator').subscribe(({ data, response }) => TRANSLATOR_MANAGER.updateDefaultTranslator(data).then((result) => response(result)));
     listener('getSupportLanguage').subscribe(({ response }) => TRANSLATOR_MANAGER.getSupportLanguage().then((result) => response(result)));
-    listener('updateFriendList').subscribe(({ data, response }) => updateFriendList(data, response));
     listener('setFriendList').subscribe(({ data, response }) => {
         data.reduce((textMap, firend) => {
             if (textMap[firend]) return textMap;
@@ -138,8 +141,10 @@ function startListeners() {
             .then(() => response(DEFAULT_SETTINGS.CurrentFriends))
             .catch(err => console.error(err));
     });
-    listener('test-response-from-inject').subscribe(({ data, response }) => {
-        console.log('onMessageExternal', data, response);
+    listener('gotNewMessages').subscribe(({ data, response }) => {
+        console.log('onMessageExternal', data);
+        const friendIds = data.map(msg => msg.chat.id);
+        updateFriendList(friendIds);
         response('got it!');
     });
 }
@@ -147,7 +152,7 @@ function startListeners() {
 InitWindow().subscribe(({ TABID }) => {
     chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
         const { status, url } = tab;
-        if (tabId === TABID && (status === 'complete' && url === LOGIN_URL || status === 'loading' && url.startsWith(LOGIN_URL + 'dashboard/workplace'))) {
+        if (tabId === TABID && status === 'loading' && url.startsWith(LOGIN_URL + 'dashboard/workplace')) {
             console.log(tabId, info, tab);
             Messager.sendToTab('content', 'getAccessToken').then(({ value }) => {
                 chrome.tabs.update(TABID, {

@@ -20,8 +20,8 @@ function openWindows() {
 }
 
 function createWindow() {
-  const width = parseInt(screen.availWidth * 0.8);
-  const height = parseInt(screen.availHeight * 0.8);
+  const width = screen.availWidth * 0.8 > 1436 ? 1436 : parseInt(screen.availWidth * 0.8);
+  const height = parseInt(width * (846 / 1436));
   const position = {
     left: screen.availLeft + screen.availWidth / 2 - width / 2,
     top: screen.availTop + screen.availHeight / 2 - height / 2,

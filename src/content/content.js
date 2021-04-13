@@ -16,23 +16,10 @@ const InjectWAPILoaded$ = new Subject();
 const InjectScriptLoaded$ = zip(InjectContactLoaded$, InjectWAPILoaded$);
 
 $(() => {
-    listenFriendListChange();
     listenInjectScriptLoaded();
     listenEnterChatPage();
     listenLeaveChatPage();
 });
-
-function listenFriendListChange() {
-    const $friendList = $('#pane-side');
-    const friendListDOMNodeInserted$ = fromEvent($friendList, 'DOMNodeInserted');
-    friendListDOMNodeInserted$.subscribe((e) => {
-        const $friend = $(e.target).find('[role="option"] > div > div:nth-child(2) > div:nth-child(1) span > span');
-        if ($friend.length) {
-            const friendId = $friend.text();
-            Messager.send(BACKGROUND, 'updateFriendList', friendId);
-        }
-    });
-}
 
 function listenEnterChatPage() {
     const $app = $('#app');
