@@ -5,9 +5,10 @@ import Storager from '../common/scripts/storage';
 import { deepCopy } from '../common/scripts/util';
 import Messager from '../common/scripts/messager';
 import { Subject } from 'rxjs';
-import { LOGIN_URL } from '../common/modal/';
+import { LOGIN_URL, URL } from '../common/modal/';
 
 const gotToken$ = new Subject();
+const navigateToURL$ = new Subject();
 
 const DEFAULT_SETTINGS = {
     LanguageSetting: {
@@ -74,11 +75,10 @@ async function changeStyles(changeStyles) {
     }
 }
 
-async function updateFriendList(updateFriendList, response) {
+async function updateFriendList(friendId, response) {
     try {
         const { CacheUnsentTextMap } = await Storager.get('CacheUnsentTextMap');
-        const friend = escape(updateFriendList.replace(' ', ''));
-        CacheUnsentTextMap[friend] = { tText: '', sText: '' };
+        CacheUnsentTextMap[friendId] = { tText: '', sText: '' };
         Storager.set({ CacheUnsentTextMap }, () => response(CacheUnsentTextMap));
     } catch (err) {
         console.error(err);
@@ -119,13 +119,13 @@ function startListeners() {
     listener('getSupportLanguage').subscribe(({ response }) => TRANSLATOR_MANAGER.getSupportLanguage().then((result) => response(result)));
     listener('updateFriendList').subscribe(({ data, response }) => updateFriendList(data, response));
     listener('setFriendList').subscribe(({ data, response }) => {
-        data.reduce((textList, firend) => {
-            if (textList[escape(firend.replace(' ', ''))]) return;
-            textList[escape(firend.replace(' ', ''))] = {
+        data.reduce((textMap, firend) => {
+            if (textMap[firend]) return textMap;
+            textMap[firend] = {
                 tText: '',
                 sText: '',
             };
-            return textList;
+            return textMap;
         }, DEFAULT_SETTINGS.CacheUnsentTextMap);
         Storager.set({ CacheUnsentTextMap: DEFAULT_SETTINGS.CacheUnsentTextMap })
             .then(() => response(DEFAULT_SETTINGS.CacheUnsentTextMap))
@@ -133,7 +133,7 @@ function startListeners() {
     });
     listener('cacheUnsentText').subscribe(({ data, response }) => cacheUnsentText(data, response));
     listener('setCurrentFriend').subscribe(({ data, response }) => {
-        DEFAULT_SETTINGS.CurrentFriends = escape(data.replace(' ', ''));
+        DEFAULT_SETTINGS.CurrentFriends = data;
         Storager.set({ CurrentFriends: DEFAULT_SETTINGS.CurrentFriends })
             .then(() => response(DEFAULT_SETTINGS.CurrentFriends))
             .catch(err => console.error(err));
@@ -147,15 +147,24 @@ function startListeners() {
 InitWindow().subscribe(({ TABID }) => {
     chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
         const { status, url } = tab;
-        if (tabId !== TABID || status !== 'complete' || !(url === LOGIN_URL || url.startsWith(LOGIN_URL + 'dashboard/workplace'))) return;
-        Messager.sendToTab('content', 'getAccessToken').then(({ value }) => gotToken$.next(value));
+        if (tabId === TABID && (status === 'complete' && url === LOGIN_URL || status === 'loading' && url.startsWith(LOGIN_URL + 'dashboard/workplace'))) {
+            console.log(tabId, info, tab);
+            Messager.sendToTab('content', 'getAccessToken').then(({ value }) => {
+                chrome.tabs.update(TABID, {
+                    url: URL
+                }, () => {
+                    navigateToURL$.next(true);
+                    gotToken$.next(value);
+                });
+            });
+        }
     });
 });
 
 gotToken$.subscribe(token => {
     console.log('token', token);
     ACCESS_TOKEN = token;
-    startListeners();
 });
+navigateToURL$.subscribe(() => startListeners());
 
 
