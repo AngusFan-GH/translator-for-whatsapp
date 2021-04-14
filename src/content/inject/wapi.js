@@ -1472,8 +1472,15 @@ WAPI.downloadBuffer = (url) => {
     });
 };
 
-WAPI.getMediaFile = async (msg) => {
+WAPI.getMediaFile = async (msgId) => {
+    const msg = window.Store.Msg.get(msgId);
     try {
+        if (msg.mediaData.mediaStage != 'RESOLVED') {
+            await msg.downloadMedia(true, 1);
+        }
+        if (msg.mediaData.mediaStage.includes('ERROR')) {
+            return undefined;
+        }
         const mediaUrl = msg.clientUrl || msg.deprecatedMms3Url;
         const buffer = await WAPI.downloadBuffer(mediaUrl);
         const decrypted = await Store.CryptoLib.decryptE2EMedia(msg.type, buffer, msg.mediaKey, msg.mimetype);
