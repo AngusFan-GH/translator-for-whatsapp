@@ -16,6 +16,7 @@
 if (!window.Store) {
     (function () {
         function getStore(modules) {
+            console.log('module', modules)
             let foundCount = 0;
             let neededObjects = [
                 { id: "Store", conditions: (module) => (module.default && module.default.Chat && module.default.Msg) ? module.default : null },
@@ -1470,3 +1471,15 @@ WAPI.downloadBuffer = (url) => {
         xhr.send(null);
     });
 };
+
+WAPI.getMediaFile = async (msg) => {
+    try {
+        const mediaUrl = msg.clientUrl || msg.deprecatedMms3Url;
+        const buffer = await WAPI.downloadBuffer(mediaUrl);
+        const decrypted = await Store.CryptoLib.decryptE2EMedia(msg.type, buffer, msg.mediaKey, msg.mimetype);
+        const data = await WAPI.readBlobAsync(decrypted._blob);
+        return data;
+    } catch (err) {
+        console.error(err);
+    }
+}
