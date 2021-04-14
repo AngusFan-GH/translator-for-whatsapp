@@ -478,14 +478,18 @@ window.WAPI.loadEarlierMessages = function (id, done) {
  */
 window.WAPI.loadAllEarlierMessages = function (id, done) {
     const found = WAPI.getChat(id);
-    x = function () {
-        if (!found.msgs.msgLoadState.noEarlierMsgs) {
-            found.loadEarlierMsgs().then(x);
-        } else if (done) {
-            done();
-        }
-    };
-    x();
+    try {
+        x = function (id, done) {
+            if (!found.msgs.msgLoadState.noEarlierMsgs) {
+                found.loadEarlierMsgs().then(() => x(id, done));
+            } else if (done) {
+                done();
+            }
+        };
+        x(id, done);
+    } catch (err) {
+        console.error(err);
+    }
 };
 
 window.WAPI.asyncLoadAllEarlierMessages = function (id, done) {

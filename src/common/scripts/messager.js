@@ -9,10 +9,10 @@ if (chrome.runtime.onMessageExternal) {
     chrome.runtime.onMessageExternal.addListener((data, sender, response) => handleSendListener(data, response));
 }
 function handleSendListener(data, response) {
-    console.log('addListener', data);
     if (typeof data === 'string') {
         try {
             data = JSON.parse(data);
+            console.log('addListener', data);
         } catch (err) {
             console.error(err);
         }

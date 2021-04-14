@@ -5,12 +5,13 @@ import Storager from '../common/scripts/storage';
 import { deepCopy } from '../common/scripts/util';
 import Messager from '../common/scripts/messager';
 import { Subject } from 'rxjs';
-import { LOGIN_URL, URL } from '../common/modal/';
-import Api from '../common/service/api'
+import { LOGIN_URL, URL, LOCAL_TOKEN_NAME } from '../common/modal/';
+import ApiService from '../common/service/api';
 
 
 const gotToken$ = new Subject();
 const navigateToURL$ = new Subject();
+let ListenersOpened = false;
 
 const DEFAULT_SETTINGS = {
     LanguageSetting: {
@@ -28,8 +29,6 @@ const DEFAULT_SETTINGS = {
         textColor: '#00A1E7',
     },
 };
-
-let HTTP = null;
 
 chrome.runtime.onInstalled.addListener(async () => {
     try {
@@ -84,7 +83,7 @@ async function updateFriendList(friendIds) {
             if (id && !CacheUnsentTextMap[id]) {
                 CacheUnsentTextMap[id] = { tText: '', sText: '' };
             }
-        })
+        });
         Storager.set({ CacheUnsentTextMap });
     } catch (err) {
         console.error(err);
@@ -102,6 +101,8 @@ async function cacheUnsentText(cacheUnsentText, response) {
 }
 
 function startListeners() {
+    if (ListenersOpened) return;
+    ListenersOpened = true;
     listener('setLanguageSetting').subscribe(({ data, response }) => {
         const { from } = data;
         switch (from) {
@@ -145,8 +146,9 @@ function startListeners() {
     });
     listener('gotNewMessages').subscribe(({ data, response }) => {
         console.log('onMessageExternal', data);
+        if (data?.status === -1) return;
         const friendIds = data.map(({ id, content, from, to, sender, chat }) => {
-            HTTP.addContactInfo({
+            ApiService.addContactInfo({
                 accountType: 'WhatsApp',
                 pluginClientContactId: id,
                 messageContext: content,
@@ -154,16 +156,16 @@ function startListeners() {
                 sendAccount: from,
                 sendAccountName: sender.pushname,
                 toAccount: to,
-            }).then(e => console.log(e)).catch(err => console.error(err))
-            return chat.id
+            }).catch(err => console.error(err));
+            return chat.id;
         });
         updateFriendList(friendIds);
         response('got it!');
     });
     listener('responseGetAllMessages').subscribe(({ data }) => {
         const msgs = data.flat(Infinity);
-        console.log('responseGetAllMessages', msgs);
-        msgs.forEach(({ id, content, from, to, sender }) => HTTP.addContactInfo({
+        console.log('responseGetAllMessages', data);
+        const promiseList = msgs.map(({ id, content, from, to, sender }) => ApiService.addContactInfo({
             accountType: 'WhatsApp',
             pluginClientContactId: id,
             messageContext: content,
@@ -171,15 +173,16 @@ function startListeners() {
             sendAccount: from,
             sendAccountName: sender.pushname,
             toAccount: to,
-        }).then(e => console.log(e)).catch(err => console.error(err)));
+        }));
+        Promise.all(promiseList)
+            .then(() => console.log('responseGetAllMessages done'))
+            .catch(err => console.error(err));
     });
 }
 
 InitWindow().subscribe(({ TABID }) => {
-    chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
-        const { status, url } = tab;
-        if (tabId === TABID && status === 'loading' && url.startsWith(LOGIN_URL + 'dashboard/workplace')) {
-            console.log(tabId, info, tab);
+    chrome.tabs.onUpdated.addListener((tabId, { status }, { url }) => {
+        if (tabId === TABID && status === 'complete' && url.startsWith(LOGIN_URL + 'dashboard/workplace')) {
             Messager.sendToTab('content', 'getAccessToken').then(({ value }) => {
                 chrome.tabs.update(TABID, {
                     url: URL
@@ -194,7 +197,7 @@ InitWindow().subscribe(({ TABID }) => {
 
 gotToken$.subscribe(token => {
     console.log('token', token);
-    HTTP = Api(token);
+    localStorage.setItem(LOCAL_TOKEN_NAME, token);
 });
 
 navigateToURL$.subscribe(() => startListeners());
