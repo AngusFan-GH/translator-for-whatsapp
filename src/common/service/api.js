@@ -65,6 +65,7 @@ function backToLogin() {
 
 class ApiService {
     static addContactInfo(data) {
+        return null;
         return instance.post('contact/contactsInfo/add', data);
     }
 }

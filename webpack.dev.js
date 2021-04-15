@@ -45,7 +45,7 @@ module.exports = merge(common, {
                     },
                     {
                         test: /\.js$/,
-                        exclude: /node_modules/,
+                        exclude: [/node_modules/, /inject/],
                         loader: 'babel-loader',
                         options: {
                             presets: [

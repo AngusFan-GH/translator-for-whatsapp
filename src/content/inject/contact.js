@@ -1,19 +1,32 @@
 import { sendToExtension, postToExtension } from '../../common/scripts/util';
 
-function getAllMessages(done) {
-    const chatMap = {};
+function getAllMessages() {
     const chatIds = WAPI.getAllChatIds();
-    let count = 0;
-    chatIds.forEach((chatId) => {
+    const promiseList = chatIds.map(chatId => new Promise((resolve, reject) => {
         WAPI.loadAllEarlierMessages(chatId, () => {
-            if (chatMap[chatId]) return;
-            const msg = WAPI.getAllMessagesInChat(chatId, true).filter(msg => msg.type === 'chat');
-            chatMap[chatId] = msg;
-            if (count++ === chatIds.length - 1) {
-                done(Object.values(chatMap));
-            }
+            const message = WAPI.getAllMessagesInChat(chatId, true)
+                .map(async msg => {
+                    try {
+                        switch (msg.type) {
+                            case 'image':
+                            case 'video':
+                            case 'ptt':
+                            case 'document':
+                                msg.mediaFile = await WAPI.getMediaFileByMessageId(msg.id);
+                                console.log('file', msg);
+                                break;
+                        }
+                        return msg;
+                    } catch (err) {
+                        reject(err);
+                    }
+                });
+            Promise.all(message)
+                .then(e => resolve(e))
+                .catch(err => reject(err));
         });
-    });
+    }));
+    return Promise.all(promiseList);
 }
 
 window.addEventListener(
@@ -27,9 +40,8 @@ window.addEventListener(
                 postToExtension('content', message.responseTitle, window.WAPI.getAllChatIds());
                 break;
             case 'getAllMessages':
-                getAllMessages((data) => {
-                    sendToExtension('background', message.responseTitle, data);
-                });
+                getAllMessages().then((data) => sendToExtension('background', message.responseTitle, data))
+                    .catch(err => console.error(err));
                 break;
         }
     },

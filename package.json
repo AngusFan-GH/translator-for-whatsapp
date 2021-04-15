@@ -64,6 +64,7 @@
     "axios": "^0.21.1",
     "copy-webpack-plugin": "^6.2.1",
     "jquery": "^3.4.1",
+    "mime-types": "^2.1.30",
     "rxjs": "^6.6.6"
   },
   "browserslist": {

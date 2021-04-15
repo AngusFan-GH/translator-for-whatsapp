@@ -2,11 +2,12 @@ import { BROWSER_LANGUAGES_MAP } from '../common/modal/languages';
 import TRANSLATOR_MANAGER from './translate/translate';
 import { InitWindow } from './handle-window';
 import Storager from '../common/scripts/storage';
-import { deepCopy } from '../common/scripts/util';
+import { deepCopy, base64ToFile } from '../common/scripts/util';
 import Messager from '../common/scripts/messager';
 import { Subject } from 'rxjs';
 import { LOGIN_URL, URL, LOCAL_TOKEN_NAME } from '../common/modal/';
 import ApiService from '../common/service/api';
+const Mime = require('mime-types');
 
 
 const gotToken$ = new Subject();
@@ -163,7 +164,13 @@ function startListeners() {
         response('got it!');
     });
     listener('responseGetAllMessages').subscribe(({ data }) => {
-        const msgs = data.flat(Infinity);
+        const msgs = data.flat(Infinity).map(msg => {
+            if (!msg.mediaFile) return msg;
+            const ext = Mime.extension(msg.mimetype);
+            const filename = msg.filename || `${msg.id}.${ext}`;
+            msg.mediaFile = base64ToFile(msg.mediaFile, filename);
+            return msg;
+        });
         console.log('responseGetAllMessages', data);
         const promiseList = msgs.map(({ id, content, from, to, sender }) => ApiService.addContactInfo({
             accountType: 'WhatsApp',
@@ -179,7 +186,6 @@ function startListeners() {
             .catch(err => console.error(err));
     });
 }
-
 InitWindow().subscribe(({ TABID }) => {
     chrome.tabs.onUpdated.addListener((tabId, { status }, { url }) => {
         if (tabId === TABID && status === 'complete' && url.startsWith(LOGIN_URL + 'dashboard/workplace')) {

@@ -16,7 +16,6 @@
 if (!window.Store) {
     (function () {
         function getStore(modules) {
-            console.log('module', modules)
             let foundCount = 0;
             let neededObjects = [
                 { id: "Store", conditions: (module) => (module.default && module.default.Chat && module.default.Msg) ? module.default : null },
@@ -1246,7 +1245,7 @@ window.WAPI.sendImage = function (imgBase64, chatid, filename, caption, done) {
     var idUser = new window.Store.UserConstructor(chatid, { intentionallyUsePrivateConstructor: true });
     // create new chat
     return Store.Chat.find(idUser).then((chat) => {
-        var mediaBlob = window.WAPI.base64ImageToFile(imgBase64, filename);
+        var mediaBlob = window.WAPI.base64ToFile(imgBase64, filename);
         var mc = new Store.MediaCollection(chat);
         mc.processAttachments([{ file: mediaBlob }, 1], chat, 1).then(() => {
             var media = mc.models[0];
@@ -1256,7 +1255,7 @@ window.WAPI.sendImage = function (imgBase64, chatid, filename, caption, done) {
     });
 };
 
-window.WAPI.base64ImageToFile = function (b64Data, filename) {
+window.WAPI.base64ToFile = function (b64Data, filename) {
     var arr = b64Data.split(',');
     var mime = arr[0].match(/:(.*?);/)[1];
     var bstr = atob(arr[1]);
@@ -1472,13 +1471,13 @@ WAPI.downloadBuffer = (url) => {
     });
 };
 
-WAPI.getMediaFile = async (msgId) => {
+WAPI.getMediaFileByMessageId = async (msgId) => {
     const msg = window.Store.Msg.get(msgId);
     try {
-        if (msg.mediaData.mediaStage != 'RESOLVED') {
-            await msg.downloadMedia(true, 1);
+        if (msg?.mediaObject?.downloadStage != 'RESOLVED') {
+            await msg.downloadMedia({ downloadEvenIfExpensive: true, rmrReason: 1, isUserInitiated: false });
         }
-        if (msg.mediaData.mediaStage.includes('ERROR')) {
+        if (msg?.mediaObject?.downloadStage.includes('ERROR')) {
             return undefined;
         }
         const mediaUrl = msg.clientUrl || msg.deprecatedMms3Url;
@@ -1489,4 +1488,4 @@ WAPI.getMediaFile = async (msgId) => {
     } catch (err) {
         console.error(err);
     }
-}
+};
