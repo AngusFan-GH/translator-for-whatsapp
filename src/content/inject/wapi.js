@@ -1158,8 +1158,8 @@ window.Store.Msg.off('add');
 sessionStorage.removeItem('saved_msgs');
 
 window.WAPI._newMessagesListener = window.Store.Msg.on('add', (newMessage) => {
-    if (newMessage && newMessage.isNewMsg && !newMessage.isSentByMe) {
-        let message = window.WAPI.processMessageObj(newMessage, false, false);
+    if (newMessage && newMessage.isNewMsg) {
+        let message = window.WAPI.processMessageObj(newMessage, true, false);
         if (message) {
             window.WAPI._newMessagesQueue.push(message);
             window.WAPI._newMessagesBuffer.push(message);
@@ -1474,10 +1474,10 @@ WAPI.downloadBuffer = (url) => {
 WAPI.getMediaFileByMessageId = async (msgId) => {
     const msg = window.Store.Msg.get(msgId);
     try {
-        if (msg?.mediaObject?.downloadStage != 'RESOLVED') {
+        if (msg.mediaObject.downloadStage !== 'RESOLVED') {
             await msg.downloadMedia({ downloadEvenIfExpensive: true, rmrReason: 1, isUserInitiated: false });
         }
-        if (msg?.mediaObject?.downloadStage.includes('ERROR')) {
+        if (msg.mediaObject.downloadStage.includes('ERROR')) {
             return undefined;
         }
         const mediaUrl = msg.clientUrl || msg.deprecatedMms3Url;

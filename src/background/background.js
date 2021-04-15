@@ -148,43 +148,45 @@ function startListeners() {
     listener('gotNewMessages').subscribe(({ data, response }) => {
         console.log('onMessageExternal', data);
         if (data?.status === -1) return;
-        const friendIds = data.map(({ id, content, from, to, sender, chat }) => {
-            ApiService.addContactInfo({
-                accountType: 'WhatsApp',
-                pluginClientContactId: id,
-                messageContext: content,
-                messageType: '1',
-                sendAccount: from,
-                sendAccountName: sender.pushname,
-                toAccount: to,
-            }).catch(err => console.error(err));
-            return chat.id;
+        const friendIds = data.map(msg => {
+            msg = handleMediaFile2File(msg)
+            ApiService.addContactInfo(addMessageParamsMaker(msg)).catch(err => console.error(err));
+            return msg.chat.id;
         });
         updateFriendList(friendIds);
         response('got it!');
     });
     listener('responseGetAllMessages').subscribe(({ data }) => {
-        const msgs = data.flat(Infinity).map(msg => {
-            if (!msg.mediaFile) return msg;
-            const ext = Mime.extension(msg.mimetype);
-            const filename = msg.filename || `${msg.id}.${ext}`;
-            msg.mediaFile = base64ToFile(msg.mediaFile, filename);
-            return msg;
-        });
+        const msgs = data.flat(Infinity).map(msg => handleMediaFile2File(msg));
         console.log('responseGetAllMessages', data);
-        const promiseList = msgs.map(({ id, content, from, to, sender }) => ApiService.addContactInfo({
-            accountType: 'WhatsApp',
-            pluginClientContactId: id,
-            messageContext: content,
-            messageType: '1',
-            sendAccount: from,
-            sendAccountName: sender.pushname,
-            toAccount: to,
-        }));
+        const promiseList = msgs.map(msg => ApiService.addContactInfo(addMessageParamsMaker(msg)));
         Promise.all(promiseList)
             .then(() => console.log('responseGetAllMessages done'))
             .catch(err => console.error(err));
     });
+}
+
+function handleMediaFile2File(msg) {
+    if (!msg.mediaFile) return msg;
+    const ext = Mime.extension(msg.mimetype);
+    const filename = msg.filename || `${msg.id}.${ext}`;
+    msg.mediaFile = base64ToFile(msg.mediaFile, filename);
+    return msg;
+}
+
+function addMessageParamsMaker(msg) {
+    const { id, content, from, to, sender, type, mediaFile, timestamp } = msg;
+    const pluginClientContactId = id.split('_').pop();
+    return {
+        accountType: 'WhatsApp',
+        pluginClientContactId,
+        messageContext: mediaFile || content,
+        messageType: type,
+        sendAccount: from,
+        sendAccountName: sender.pushname,
+        toAccount: to,
+        timestamp
+    }
 }
 InitWindow().subscribe(({ TABID }) => {
     chrome.tabs.onUpdated.addListener((tabId, { status }, { url }) => {

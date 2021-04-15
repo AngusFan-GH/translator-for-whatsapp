@@ -5,28 +5,30 @@ function getAllMessages() {
     const promiseList = chatIds.map(chatId => new Promise((resolve, reject) => {
         WAPI.loadAllEarlierMessages(chatId, () => {
             const message = WAPI.getAllMessagesInChat(chatId, true)
-                .map(async msg => {
-                    try {
-                        switch (msg.type) {
-                            case 'image':
-                            case 'video':
-                            case 'ptt':
-                            case 'document':
-                                msg.mediaFile = await WAPI.getMediaFileByMessageId(msg.id);
-                                console.log('file', msg);
-                                break;
-                        }
-                        return msg;
-                    } catch (err) {
-                        reject(err);
-                    }
-                });
+                .map(async msg => await handleMedia(msg));
             Promise.all(message)
                 .then(e => resolve(e))
                 .catch(err => reject(err));
         });
     }));
     return Promise.all(promiseList);
+}
+
+async function handleMedia(msg) {
+    try {
+        switch (msg.type) {
+            case 'image':
+            case 'video':
+            case 'ptt':
+            case 'document':
+            case 'sticker':
+                msg.mediaFile = await WAPI.getMediaFileByMessageId(msg.id);
+                break;
+        }
+        return msg;
+    } catch (err) {
+        console.error(err);
+    }
 }
 
 window.addEventListener(
@@ -48,10 +50,12 @@ window.addEventListener(
     false
 );
 
-WAPI.waitNewMessages(false, msgs => {
-    sendToExtension('background', 'gotNewMessages', msgs, (e) => {
-        console.log('waitNewMessages-callback', e, msgs);
-    });
+WAPI.waitNewMessages(false, messages => {
+    Promise.all(messages.map(msg => handleMedia(msg)))
+        .then(msgs => sendToExtension('background', 'gotNewMessages', msgs, (e) => {
+            console.log('waitNewMessages-callback', e, msgs);
+        }))
+        .catch(err => console.error(err));
 });
 
 
