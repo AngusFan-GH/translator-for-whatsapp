@@ -42,10 +42,10 @@ instance.interceptors.response.use(
                     console.error('您访问的网页不存在。');
                     break;
                 case 500:
-                    console.error('服务器错误。');
+                    console.error('服务器错误500。');
                     backToLogin();
                 case 502:
-                    console.error('服务器错误。');
+                    console.error('服务器错误502。');
                     const config = error.config;
                     config.__retryCount = config.__retryCount || 0;
                     if (config.__retryCount >= 3) {

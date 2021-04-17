@@ -723,7 +723,6 @@ window.WAPI.ReplyMessage = function (idMessage, message, done) {
                         return True;
                     }
                     trials += 1;
-                    console.log(trials);
                     if (trials > 30) {
                         done(true);
                         return;
@@ -811,7 +810,6 @@ window.WAPI.sendMessage = function (id, message, done) {
                         return True;
                     }
                     trials += 1;
-                    console.log(trials);
                     if (trials > 30) {
                         done(true);
                         return;
@@ -1474,11 +1472,15 @@ WAPI.downloadBuffer = (url) => {
 WAPI.getMediaFileByMessageId = async (msgId) => {
     const msg = window.Store.Msg.get(msgId);
     try {
-        if (msg.mediaObject.downloadStage !== 'RESOLVED') {
-            await msg.downloadMedia({ downloadEvenIfExpensive: true, rmrReason: 1, isUserInitiated: false });
-        }
-        if (msg.mediaObject.downloadStage.includes('ERROR')) {
-            return undefined;
+        if (msg.self === 'in') {
+            msg.mediaObject.downloadStage !== 'RESOLVED' &&
+                await msg.downloadMedia({ downloadEvenIfExpensive: true, rmrReason: 1, isUserInitiated: false });
+            if (msg.mediaObject.downloadStage.includes('ERROR')) {
+                return undefined;
+            }
+        } else {
+            msg.mediaObject.uploadStage !== 'UPLOADED' &&
+                await WAPI.waitMediaUploaded(msgId);
         }
         const mediaUrl = msg.clientUrl || msg.deprecatedMms3Url;
         const buffer = await WAPI.downloadBuffer(mediaUrl);
@@ -1488,4 +1490,23 @@ WAPI.getMediaFileByMessageId = async (msgId) => {
     } catch (err) {
         console.error(err);
     }
+};
+
+WAPI.waitMediaUploaded = (msgId) => {
+    const msg = window.Store.Msg.get(msgId);
+    if (msg.self !== 'out') return Promise.resolve(undefined);
+    return new Promise((resolve, reject) => {
+        const timer = setInterval(() => {
+            console.log(msgId, 'waitMediaUploaded', msg.mediaObject.uploadStage);
+            if (msg.mediaObject.uploadStage.includes('ERROR') ||
+                msg.mediaObject.uploadStage !== 'NEED_UPLOAD') {
+                clearInterval(timer);
+                reject(msg.mediaObject.uploadStage);
+                return;
+            };
+            if (msg.mediaObject.uploadStage !== 'UPLOADED') return;
+            clearInterval(timer);
+            resolve();
+        }, 500);
+    });
 };
