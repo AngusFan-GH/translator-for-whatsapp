@@ -3,6 +3,8 @@ import { LOCAL_TOKEN_NAME, LOGIN_URL } from '../modal/';
 import { TABID } from '../../background/handle-window';
 
 const HOST = 'http://contact.cn.utools.club/scrm/';
+const FILE_HOST = 'http://scrm-upload.cn.utools.club/';
+
 let HANDLED = false;
 
 const instance = axios.create({
@@ -23,11 +25,10 @@ instance.interceptors.request.use(
 
 instance.interceptors.response.use(
     response => {
-        if (response?.status === 200) {
-            return Promise.resolve(response);
-        } else {
-            return Promise.reject(response);
-        }
+        const { status, data } = response;
+        return status !== 200 || data?.code !== 200 ?
+            Promise.reject(response) :
+            Promise.resolve(data);
     },
     error => {
         if (error?.response?.status) {
@@ -75,6 +76,18 @@ class ApiService {
     static addContactInfo(data) {
         // return console.log('contact/contactsInfo/add', data), Promise.resolve(data);
         return instance.post('contact/contactsInfo/add', data);
+    }
+    static addContactInfoList(data) {
+        // return console.log('contact/contactsInfo/add-list', data), Promise.resolve(data);
+        return instance.post('contact/contactsInfo/add-list', data);
+    }
+    static getUnSentMessageIds(data) {
+        // return console.log('contact/contactsInfo/checkPluginClientContactId', data), Promise.resolve(data);
+        return instance.post('contact/contactsInfo/checkPluginClientContactId', data);
+    }
+    static uploadFile(data) {
+        // return console.log(this.FILE_HOST + 'gruop1/upload', data), Promise.resolve(data);
+        return axios.post(FILE_HOST + 'gruop1/upload', data);
     }
 }
 

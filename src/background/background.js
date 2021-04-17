@@ -149,29 +149,67 @@ function startListeners() {
         console.log('onMessageExternal', data);
         if (data?.status === -1) return;
         const friendIds = data.map(msg => {
-            msg = handleMediaFile2File(msg)
-            ApiService.addContactInfo(addMessageParamsMaker(msg)).catch(err => console.error(err));
+            addNewMessage(msg);
             return msg.chat.id;
         });
         updateFriendList(friendIds);
         response('got it!');
     });
-    listener('responseGetAllMessages').subscribe(({ data }) => {
-        const msgs = data.flat(Infinity).map(msg => handleMediaFile2File(msg));
-        console.log('responseGetAllMessages', data);
+    listener('responseGetAllMessageIds').subscribe(({ data }) => {
+        getUnSentMessageIds(data)
+            .then(msgIds => Messager.sendToTab('content', 'getAllUnSendMessages', msgIds))
+            .catch(err => console.error(err));
+    });
+    listener('responseGetAllUnSendMessages').subscribe(({ data }) => {
+        return addMessageList(data);
+        const msgs = data.map(msg => handleMediaFile2File(msg));
+        console.log('responseGetAllUnSendMessages', data);
         const promiseList = msgs.map(msg => ApiService.addContactInfo(addMessageParamsMaker(msg)));
         Promise.all(promiseList)
-            .then(() => console.log('responseGetAllMessages done'))
+            .then(() => console.log('responseGetAllUnSendMessages done'))
             .catch(err => console.error(err));
     });
 }
 
+async function addNewMessage(msg) {
+    msg.mediaFile = await uploadFile(handleMediaFile2File(msg));
+    ApiService.addContactInfo(addMessageParamsMaker(msg))
+        .catch(err => console.error(err));
+}
+
+async function addMessageList(data) {
+    try {
+        const msgs = await Promise.all(data.map(async msg => {
+            if (msg.mediaFile) {
+                msg.mediaFile = await uploadFile(handleMediaFile2File(msg));
+            }
+            return addMessageParamsMaker(msg);
+        }));
+        console.warn(msgs);
+        ApiService.addContactInfoList(msgs)
+            .then(() => console.log('responseGetAllUnSendMessages done'))
+            .catch(err => console.error(err));
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+function uploadFile(file) {
+    return ApiService.uploadFile(file);
+}
+
+function getUnSentMessageIds(msgIds) {
+    const ids = msgIds.map(id => id.split('_').pop());
+    return ApiService.getUnSentMessageIds(ids)
+        .then(({ result }) => Promise.resolve(result?.unSendMessageIds))
+        .catch(err => console.error(err));
+}
+
 function handleMediaFile2File(msg) {
-    if (!msg.mediaFile) return msg;
+    if (!msg.mediaFile) return null;
     const ext = Mime.extension(msg.mimetype);
     const filename = msg.filename || `${msg.id}.${ext}`;
-    msg.mediaFile = base64ToFile(msg.mediaFile, filename);
-    return msg;
+    return base64ToFile(msg.mediaFile, filename);
 }
 
 function addMessageParamsMaker(msg) {

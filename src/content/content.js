@@ -32,7 +32,10 @@ function listenEnterChatPage() {
     const pageInited$ = appDOMNodeInserted$.pipe(filter(({ className }) => typeof className === 'string' && className.includes('two')));
     pageInited$.subscribe(() => {
         injectScriptToPage(); // 向页面注入脚本
-        setFriendList();
+    });
+    InjectScriptLoaded$.subscribe(() => {
+        getAllChatIds();
+        getAllMessageIds();
     });
     const enterChatPage$ = appDOMNodeInserted$.pipe(filter(({ id }) => typeof id === 'string' && id === 'main'));
     enterChatPage$.subscribe(() => {
@@ -50,26 +53,31 @@ function listenInjectScriptLoaded() {
     });
 }
 
-function setFriendList() {
-    InjectScriptLoaded$.subscribe(() => {
-        getAllChatIds();
-        getAllMessages();
+function setFriendList(data) {
+    Messager.send(BACKGROUND, 'setFriendList', data).then(e => {
+        console.log('setFriendList', e);
     });
 }
 
 function getAllChatIds() {
     const responseTitle = 'responseGetAllChatIds';
     Messager.post(InjectScript, 'getAllChatIds', { responseTitle });
-    Messager.receive(Content, responseTitle).subscribe(({ data }) => {
-        Messager.send(BACKGROUND, 'setFriendList', data).then(e => {
-            console.log('setFriendList', e);
-        });
-    });
+    Messager.receive(Content, responseTitle)
+        .subscribe(({ data }) => setFriendList(data));
 }
 
-function getAllMessages() {
-    const responseTitle = 'responseGetAllMessages';
-    Messager.post(InjectScript, 'getAllMessages', { responseTitle });
+function getAllMessageIds() {
+    const responseTitle = 'responseGetAllMessageIds';
+    Messager.post(InjectScript, 'getAllMessageIds', { responseTitle });
+    getAllUnSendMessages();
+}
+
+function getAllUnSendMessages() {
+    Messager.receive(Content, 'getAllUnSendMessages')
+        .subscribe(msgIds => {
+            const responseTitle = 'responseGetAllUnSendMessages';
+            Messager.post(InjectScript, 'getAllUnSendMessages', { data: msgIds, responseTitle });
+        });
 }
 
 function listenLeaveChatPage() {
