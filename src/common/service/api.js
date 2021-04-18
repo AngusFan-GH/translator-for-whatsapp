@@ -8,8 +8,7 @@ const FILE_HOST = 'http://scrm-upload.cn.utools.club/';
 let HANDLED = false;
 
 const instance = axios.create({
-    baseURL: HOST,
-    timeout: 20000
+    baseURL: HOST
 });
 
 instance.interceptors.request.use(
@@ -25,7 +24,10 @@ instance.interceptors.request.use(
 
 instance.interceptors.response.use(
     response => {
-        const { status, data } = response;
+        const { status, data, config } = response;
+        if (config.url === 'group1/upload') {
+            return Promise.resolve(data);
+        }
         return status !== 200 || data?.code !== 200 ?
             Promise.reject(response) :
             Promise.resolve(data);
@@ -86,8 +88,12 @@ class ApiService {
         return instance.post('contact/contactsInfo/checkPluginClientContactId', data);
     }
     static uploadFile(data) {
-        // return console.log(this.FILE_HOST + 'gruop1/upload', data), Promise.resolve(data);
-        return axios.post(FILE_HOST + 'gruop1/upload', data);
+        // return console.log(this.FILE_HOST + 'group1/upload', data), Promise.resolve(data);
+        const formData = new FormData();
+        formData.append("file", data);
+        return instance.post('group1/upload', formData, {
+            baseURL: FILE_HOST
+        });
     }
 }
 

@@ -172,20 +172,26 @@ function startListeners() {
 }
 
 async function addNewMessage(msg) {
-    msg.mediaFile = await uploadFile(handleMediaFile2File(msg));
+    if (msg.mediaFile) {
+        msg.mediaFile = await uploadFile(handleMediaFile2File(msg));
+        return ApiService.addContactInfo(addMessageParamsMaker(msg))
+            .catch(err => console.error(err));
+    }
     ApiService.addContactInfo(addMessageParamsMaker(msg))
         .catch(err => console.error(err));
 }
 
 async function addMessageList(data) {
     try {
-        const msgs = await Promise.all(data.map(async msg => {
+        let msgs = await Promise.all(data.map(async msg => {
             if (msg.mediaFile) {
                 msg.mediaFile = await uploadFile(handleMediaFile2File(msg));
             }
             return addMessageParamsMaker(msg);
         }));
+        msgs = msgs.filter(({ messageContext, messageType }) => messageType !== 'revoked' && messageContext != null && messageContext !== '')
         console.warn(msgs);
+        if (!msgs.length) return;
         ApiService.addContactInfoList(msgs)
             .then(() => console.log('responseGetAllUnSendMessages done'))
             .catch(err => console.error(err));
@@ -207,8 +213,9 @@ function getUnSentMessageIds(msgIds) {
 
 function handleMediaFile2File(msg) {
     if (!msg.mediaFile) return null;
-    const ext = Mime.extension(msg.mimetype);
-    const filename = msg.filename || `${msg.id}.${ext}`;
+    let ext = Mime.extension(msg.mimetype);
+    ext = ext === 'oga' ? 'ogg' : ext;
+    const filename = msg.filename || `${msg.id.split('_').pop()}.${ext}`;
     return base64ToFile(msg.mediaFile, filename);
 }
 

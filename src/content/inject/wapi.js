@@ -1499,7 +1499,7 @@ WAPI.waitMediaUploaded = (msgId) => {
         const timer = setInterval(() => {
             console.log(msgId, 'waitMediaUploaded', msg.mediaObject.uploadStage);
             if (msg.mediaObject.uploadStage.includes('ERROR') ||
-                msg.mediaObject.uploadStage !== 'NEED_UPLOAD') {
+                msg.mediaObject.uploadStage === 'NEED_UPLOAD') {
                 clearInterval(timer);
                 reject(msg.mediaObject.uploadStage);
                 return;
