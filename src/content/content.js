@@ -1,22 +1,20 @@
 import './content.css';
 import $ from 'jquery';
 import { fromEvent, Subject, zip } from 'rxjs';
-import { TRANSLATIO_NDISPLAY_MODE } from '../common/modal/';
+import { TRANSLATIO_NDISPLAY_MODE, MESSAGER_SENDER } from '../common/modal/';
 import { LANGUAGES, BROWSER_LANGUAGES_MAP, LANGUAGES_TO_CHINESE } from '../common/modal/languages';
 import { injectScriptToPage } from './inject/injectScript';
 import Storager from '../common/scripts/storage';
 import Messager from '../common/scripts/messager';
 import { filter, map } from 'rxjs/operators';
 
-const BACKGROUND = 'background';
-const InjectScript = 'injectScript';
-const Content = 'content';
+const $Messager = new Messager(MESSAGER_SENDER.CONTENT);
+
 const InjectContactLoaded$ = new Subject();
 const InjectWAPILoaded$ = new Subject();
 const InjectScriptLoaded$ = zip(InjectContactLoaded$, InjectWAPILoaded$);
 
 $(() => {
-    listenInjectScriptLoaded();
     listenEnterChatPage();
     listenLeaveChatPage();
 });
@@ -29,55 +27,50 @@ function listenEnterChatPage() {
         const className = $target.prop('className');
         return { id, className, $target };
     }));
+    // 联系人页面加载完成
     const pageInited$ = appDOMNodeInserted$.pipe(filter(({ className }) => typeof className === 'string' && className.includes('two')));
     pageInited$.subscribe(() => {
+        listenInjectScriptLoaded(); // 监听注入脚本加载完成
         injectScriptToPage(); // 向页面注入脚本
+    });
+    //进入聊天对话界面
+    const enterChatPage$ = appDOMNodeInserted$.pipe(filter(({ id }) => typeof id === 'string' && id === 'main'));
+    enterChatPage$.subscribe(() => {
+        injectInputContainer(); // 注入辅助输入框
+        getCurrentFriend(); // 获取当前对话用户
+        listenMessageListChange(); // 监听消息列表改变
+        renderMessageList(true); // 渲染消息列表
+    });
+}
+
+function listenInjectScriptLoaded() {
+    $Messager.receive(MESSAGER_SENDER.INJECTSCRIPT, 'injectScriptLoaded').subscribe(({ message }) => {
+        if (message === 'content/wapi.js') InjectWAPILoaded$.next(true);
+        if (message === 'content/contact.js') InjectContactLoaded$.next(true);
     });
     InjectScriptLoaded$.subscribe(() => {
         getAllChatIds();
         getAllMessageIds();
     });
-    const enterChatPage$ = appDOMNodeInserted$.pipe(filter(({ id }) => typeof id === 'string' && id === 'main'));
-    enterChatPage$.subscribe(() => {
-        getCurrentFriend();
-        renderMessageList(true);
-        listenMessageListChange();
-        injectInputContainer();
-    });
-}
-
-function listenInjectScriptLoaded() {
-    Messager.receive('content', 'injectScriptLoaded').subscribe(({ data }) => {
-        if (data === 'content/wapi.js') InjectWAPILoaded$.next(true);
-        if (data === 'content/contact.js') InjectContactLoaded$.next(true);
-    });
 }
 
 function setFriendList(data) {
-    Messager.send(BACKGROUND, 'setFriendList', data).then(e => {
-        console.log('setFriendList', e);
-    });
+    $Messager.send(MESSAGER_SENDER.BACKGROUND, 'setFriendList', data);
 }
 
 function getAllChatIds() {
-    const responseTitle = 'responseGetAllChatIds';
-    Messager.post(InjectScript, 'getAllChatIds', { responseTitle });
-    Messager.receive(Content, responseTitle)
-        .subscribe(({ data }) => setFriendList(data));
+    $Messager.post(MESSAGER_SENDER.INJECTSCRIPT, 'getAllChatIds').subscribe(data => setFriendList(data));
 }
 
 function getAllMessageIds() {
-    const responseTitle = 'responseGetAllMessageIds';
-    Messager.post(InjectScript, 'getAllMessageIds', { responseTitle });
+    $Messager.post(MESSAGER_SENDER.INJECTSCRIPT, 'getAllMessageIds');
     getAllUnSendMessages();
 }
 
 function getAllUnSendMessages() {
-    Messager.receive(Content, 'getAllUnSendMessages')
-        .subscribe(msgIds => {
-            const responseTitle = 'responseGetAllUnSendMessages';
-            Messager.post(InjectScript, 'getAllUnSendMessages', { data: msgIds, responseTitle });
-        });
+    const title = 'getAllUnSendMessages';
+    $Messager.receive(MESSAGER_SENDER.BACKGROUND, title)
+        .subscribe(({ message }) => $Messager.post(MESSAGER_SENDER.INJECTSCRIPT, title, message));
 }
 
 function listenLeaveChatPage() {
@@ -96,11 +89,11 @@ function listenLeaveChatPage() {
 
 function getCurrentFriend() {
     const currentId = $('#main .focusable-list-item[data-id]').attr('data-id').split('_')[1];
-    Messager.send(BACKGROUND, 'setCurrentFriend', currentId).then(() => rerenderDefaultText());
+    $Messager.send(MESSAGER_SENDER.BACKGROUND, 'setCurrentFriend', currentId).subscribe(() => rerenderDefaultText());
 }
 
 function cacheUnsentText(tText, sText) {
-    Messager.send(BACKGROUND, 'cacheUnsentText', { tText, sText });
+    $Messager.send(MESSAGER_SENDER.BACKGROUND, 'cacheUnsentText', { tText, sText });
 }
 
 async function rerenderDefaultText() {
@@ -173,16 +166,16 @@ function addTranslateFlag() {
             const $selectContainer = $('<div class="translate_flag_select_container"></div>');
             const $selectSearch = $('<input class="translate_flag_select_search" type="text" autocomplete="off" placeholder="输入语种"/>');
             $selectContainer.append($selectSearch);
-            Messager.send(BACKGROUND, 'getSupportLanguage').then((languages) => {
+            $Messager.send(MESSAGER_SENDER.BACKGROUND, 'getSupportLanguage').subscribe(languages => {
                 const languageSet = handleSelectLanguages(languages).reduce((set, lg) => {
                     if (lg === buttonLg) return set;
                     const $lgTmpl = $(`<li data-lg="${lg}">${getChinese(lg)}</li>`);
                     $lgTmpl.click((e) => {
-                        Messager.send(BACKGROUND, 'setLanguageSetting', {
+                        $Messager.send(MESSAGER_SENDER.BACKGROUND, 'setLanguageSetting', {
                             from: 'select',
                             language: $(e.target).attr('data-lg'),
                             target: buttonTarget,
-                        }).then(() => {
+                        }).subscribe(() => {
                             $selectContainer.remove();
                             if (buttonTarget === 'tl') renderMessageList();
                         });
@@ -270,7 +263,7 @@ function listenInputValueChange() {
             const text = e.target.innerText.trim();
             if (!text) return;
             setTimeout(() => $placeholder.hide(), 0);
-            Messager.send(BACKGROUND, 'translateInput', text).then(e => {
+            $Messager.send(MESSAGER_SENDER.BACKGROUND, 'translateInput', text).subscribe(e => {
                 $ipt.text('');
                 $ipt.focus();
                 document.execCommand('insertText', false, e.mainMeaning);
@@ -313,13 +306,15 @@ function setCaret(el) {
 
 function defaultTranslatorChange() {
     const $defaultTranslator = $('#tfw_input_container .default_translator');
-    Storager.get('DefaultTranslator').then(({ DefaultTranslator }) => $defaultTranslator.val(DefaultTranslator));
+    Storager.get('DefaultTranslator')
+        .then(({ DefaultTranslator }) => $defaultTranslator.val(DefaultTranslator));
     const defaultTranslatorChange$ = fromEvent($defaultTranslator, 'change');
     defaultTranslatorChange$.subscribe((e) => {
-        Messager.send(BACKGROUND, 'changeDefaultTranslator', e.target.value).then(() => {
-            renderMessageList(true);
-            handleInjectInputTranslateFlag();
-        });
+        $Messager.send(MESSAGER_SENDER.BACKGROUND, 'changeDefaultTranslator', e.target.value)
+            .subscribe(() => {
+                renderMessageList(true);
+                handleInjectInputTranslateFlag()
+            });
     });
 }
 
@@ -327,13 +322,13 @@ async function handleInjectInputTranslateFlag() {
     try {
         const { LanguageSetting } = await Storager.get('LanguageSetting');
         const { tl } = LanguageSetting;
-        Messager.send(BACKGROUND, 'getSupportLanguage').then((languages) => {
+        $Messager.send(MESSAGER_SENDER.BACKGROUND, 'getSupportLanguage').subscribe((languages) => {
             if (languages.indexOf(tl) === -1) {
-                Messager.send(BACKGROUND, 'setLanguageSetting', {
+                $Messager.send(MESSAGER_SENDER.BACKGROUND, 'setLanguageSetting', {
                     from: 'select',
                     language: BROWSER_LANGUAGES_MAP[chrome.i18n.getUILanguage()],
                     target: 'tl',
-                }).then(() => renderMessageList());
+                }).subscribe(() => renderMessageList());
             }
         });
     } catch (err) {
@@ -389,7 +384,7 @@ async function renderMessageList(isAutoDetect = false) {
 
 function setLanguageSetting($target) {
     const text = $($target.children().get(0)).text();
-    Messager.send(BACKGROUND, 'setLanguageSetting', {
+    $Messager.send(MESSAGER_SENDER.BACKGROUND, 'setLanguageSetting', {
         from: 'message',
         text,
     });
@@ -427,37 +422,38 @@ function renderTranslateResult($el, isHideSource = false) {
 
 function handleRenderTranslateResult($el, $container, isHideSource) {
     const text = $($el.children().get(0)).text();
-    Messager.send(BACKGROUND, 'translateMessage', text).then(e => {
-        let $div = null;
-        if ($container.find('.tfw_translate_result').get(0)) {
-            $div = $($container.find('.tfw_translate_result').get(0));
-        } else {
-            $div = $('<div class="tfw_translate_result"></div>');
-            Storager.get('Styles').then(({ Styles }) => {
-                const { lineColor, textColor } = Styles;
+    $Messager.send(MESSAGER_SENDER.BACKGROUND, 'translateMessage', text)
+        .subscribe(e => {
+            let $div = null;
+            if ($container.find('.tfw_translate_result').get(0)) {
+                $div = $($container.find('.tfw_translate_result').get(0));
+            } else {
+                $div = $('<div class="tfw_translate_result"></div>');
+                Storager.get('Styles').then(({ Styles }) => {
+                    const { lineColor, textColor } = Styles;
+                    $div.css({
+                        color: textColor,
+                        borderTopColor: lineColor,
+                    });
+                });
+            }
+            Storager.onChanged('Styles').subscribe((e) => {
+                const { lineColor, textColor } = e.newValue;
                 $div.css({
                     color: textColor,
                     borderTopColor: lineColor,
                 });
             });
-        }
-        Storager.onChanged('Styles').subscribe((e) => {
-            const { lineColor, textColor } = e.newValue;
-            $div.css({
-                color: textColor,
-                borderTopColor: lineColor,
-            });
+            $div.text(e.mainMeaning);
+            $div.append($('<span class="placeholder"></span>'));
+            $container.append($div);
+            handleToggleSourceText($el, isHideSource);
+            if (isHideSource) {
+                $div.addClass('only');
+            } else {
+                $div.removeClass('only');
+            }
         });
-        $div.text(e.mainMeaning);
-        $div.append($('<span class="placeholder"></span>'));
-        $container.append($div);
-        handleToggleSourceText($el, isHideSource);
-        if (isHideSource) {
-            $div.addClass('only');
-        } else {
-            $div.removeClass('only');
-        }
-    });
 }
 
 function handleToggleSourceText($el, isHideSource) {

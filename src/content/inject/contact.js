@@ -1,4 +1,5 @@
 import { sendToExtension, postToExtension } from '../../common/scripts/util';
+import { MESSAGER_SENDER } from '../../common/modal/';
 function getAllMessageIds() {
     const chatIds = WAPI.getAllChatIds();
     const promiseList = chatIds.map(chatId => new Promise((resolve, reject) => {
@@ -37,21 +38,21 @@ async function handleMedia(msg) {
 window.addEventListener(
     "message",
     (e) => {
-        const { to, title, message } = JSON.parse(e.data);
-        if ('injectScript' !== to) return;
-        console.log('injectScript', message);
+        const { id, to: target, from: to, title, message } = JSON.parse(e.data);
+        if (MESSAGER_SENDER.INJECTSCRIPT !== target) return;
+        console.log(MESSAGER_SENDER.INJECTSCRIPT, message);
         switch (title) {
             case 'getAllChatIds':
-                postToExtension('content', message.responseTitle, WAPI.getAllChatIds());
+                postToExtension(id, MESSAGER_SENDER.CONTENT, title, WAPI.getAllChatIds());
                 break;
             case 'getAllMessageIds':
                 getAllMessageIds()
-                    .then((data) => sendToExtension('background', message.responseTitle, data.flat(Infinity)))
+                    .then(data => sendToExtension(MESSAGER_SENDER.BACKGROUND, title, data.flat(Infinity)))
                     .catch(err => console.error(err));
                 break;
             case 'getAllUnSendMessages':
-                getAllUnSendMessages(message.data.data)
-                    .then((data) => sendToExtension('background', message.responseTitle, data))
+                getAllUnSendMessages(message)
+                    .then(data => sendToExtension(MESSAGER_SENDER.BACKGROUND, title, data))
                     .catch(err => console.error(err));
                 break;
         }
@@ -61,9 +62,7 @@ window.addEventListener(
 
 WAPI.waitNewMessages(false, messages => {
     Promise.all(messages.map(msg => handleMedia(msg)))
-        .then(msgs => sendToExtension('background', 'gotNewMessages', msgs, (e) => {
-            console.log('waitNewMessages-callback', e, msgs);
-        }))
+        .then(msgs => sendToExtension(MESSAGER_SENDER.BACKGROUND, 'gotNewMessages', msgs))
         .catch(err => console.error(err));
 });
 

@@ -5,9 +5,11 @@ import Storager from '../common/scripts/storage';
 import { deepCopy, base64ToFile } from '../common/scripts/util';
 import Messager from '../common/scripts/messager';
 import { Subject } from 'rxjs';
-import { LOGIN_URL, URL, LOCAL_TOKEN_NAME } from '../common/modal/';
+import { LOGIN_URL, URL, LOCAL_TOKEN_NAME, MESSAGER_SENDER } from '../common/modal/';
 import ApiService from '../common/service/api';
 const Mime = require('mime-types');
+
+const $Messager = new Messager(MESSAGER_SENDER.BACKGROUND);
 
 
 const gotToken$ = new Subject();
@@ -55,10 +57,6 @@ function setDefaultSettings(result, settings) {
     }
 }
 
-function listener(key) {
-    return Messager.receive('background', key);
-}
-
 async function changeStyles(changeStyles) {
     try {
         const { target, color } = changeStyles;
@@ -91,11 +89,11 @@ async function updateFriendList(friendIds) {
     }
 }
 
-async function cacheUnsentText(cacheUnsentText, response) {
+async function cacheUnsentText(cacheUnsentText) {
     try {
         const { CurrentFriends, CacheUnsentTextMap } = await Storager.get(['CurrentFriends', 'CacheUnsentTextMap']);
         CacheUnsentTextMap[CurrentFriends] = cacheUnsentText;
-        Storager.set({ CacheUnsentTextMap }, () => response(CacheUnsentTextMap));
+        Storager.set({ CacheUnsentTextMap }, () => console.log('cacheUnsentText', CacheUnsentTextMap));
     } catch (err) {
         console.error(err);
     }
@@ -104,69 +102,81 @@ async function cacheUnsentText(cacheUnsentText, response) {
 function startListeners() {
     if (ListenersOpened) return;
     ListenersOpened = true;
-    listener('setLanguageSetting').subscribe(({ data, response }) => {
-        const { from } = data;
+    $Messager.receive(MESSAGER_SENDER.CONTENT, 'setLanguageSetting').subscribe(({ message, title, id }) => {
+        const { from } = message;
         switch (from) {
             case 'message':
-                const { text } = data;
+                const { text } = message;
                 TRANSLATOR_MANAGER.detect(text).then((e) => {
                     e = e === 'zh-CN' ? 'en' : e;
                     TRANSLATOR_MANAGER.updateLanguageSetting({ s2: e });
                 });
                 break;
             case 'select':
-                const { target, language } = data;
-                TRANSLATOR_MANAGER.updateLanguageSetting({ [target]: language }).then(() => response());
+                const { target, language } = message;
+                TRANSLATOR_MANAGER.updateLanguageSetting({ [target]: language }).then(() => $Messager.replay(id).sendToTab(title));
                 break;
         }
     });
-    listener('changeStyles').subscribe(({ data }) => changeStyles(data));
-    listener('translateMessage').subscribe(({ data, response }) => TRANSLATOR_MANAGER.translate(data).then((result) => response(result)));
-    listener('translateInput').subscribe(({ data, response }) => TRANSLATOR_MANAGER.translate(data, true).then((result) => response(result)));
-    listener('changeDefaultTranslator').subscribe(({ data, response }) => TRANSLATOR_MANAGER.updateDefaultTranslator(data).then((result) => response(result)));
-    listener('getSupportLanguage').subscribe(({ response }) => TRANSLATOR_MANAGER.getSupportLanguage().then((result) => response(result)));
-    listener('setFriendList').subscribe(({ data, response }) => {
-        data.reduce((textMap, firend) => {
-            if (textMap[firend]) return textMap;
-            textMap[firend] = {
-                tText: '',
-                sText: '',
-            };
-            return textMap;
-        }, DEFAULT_SETTINGS.CacheUnsentTextMap);
-        Storager.set({ CacheUnsentTextMap: DEFAULT_SETTINGS.CacheUnsentTextMap })
-            .then(() => response(DEFAULT_SETTINGS.CacheUnsentTextMap))
-            .catch(err => console.error(err));
-    });
-    listener('cacheUnsentText').subscribe(({ data, response }) => cacheUnsentText(data, response));
-    listener('setCurrentFriend').subscribe(({ data, response }) => {
-        DEFAULT_SETTINGS.CurrentFriends = data;
-        Storager.set({ CurrentFriends: DEFAULT_SETTINGS.CurrentFriends })
-            .then(() => response(DEFAULT_SETTINGS.CurrentFriends))
-            .catch(err => console.error(err));
-    });
-    listener('gotNewMessages').subscribe(({ data, response }) => {
-        console.log('onMessageExternal', data);
-        if (data?.status === -1) return;
-        const friendIds = data.map(msg => {
-            addNewMessage(msg);
-            return msg.chat.id;
+    $Messager.receive(MESSAGER_SENDER.CONTENT, 'changeStyles')
+        .subscribe(({ message }) => changeStyles(message));
+    $Messager.receive(MESSAGER_SENDER.CONTENT, 'translateMessage')
+        .subscribe(({ message, title, id }) => TRANSLATOR_MANAGER.translate(message)
+            .then(result => $Messager.replay(id).sendToTab(title, result)));
+    $Messager.receive(MESSAGER_SENDER.CONTENT, 'translateInput')
+        .subscribe(({ message, title, id }) => TRANSLATOR_MANAGER.translate(message, true)
+            .then(result => $Messager.replay(id).sendToTab(title, result)));
+    $Messager.receive(MESSAGER_SENDER.CONTENT, 'changeDefaultTranslator')
+        .subscribe(({ message, title, id }) => TRANSLATOR_MANAGER.updateDefaultTranslator(message)
+            .then(result => $Messager.replay(id).sendToTab(title, result)));
+    $Messager.receive(MESSAGER_SENDER.CONTENT, 'getSupportLanguage')
+        .subscribe(({ id, title }) => TRANSLATOR_MANAGER.getSupportLanguage()
+            .then(result => $Messager.replay(id).sendToTab(title, result)));
+    $Messager.receive(MESSAGER_SENDER.CONTENT, 'setFriendList')
+        .subscribe(({ message }) => {
+            message.reduce((textMap, firend) => {
+                if (textMap[firend]) return textMap;
+                textMap[firend] = {
+                    tText: '',
+                    sText: '',
+                };
+                return textMap;
+            }, DEFAULT_SETTINGS.CacheUnsentTextMap);
+            Storager.set({ CacheUnsentTextMap: DEFAULT_SETTINGS.CacheUnsentTextMap })
+                .then(() => console.log('setFriendList', DEFAULT_SETTINGS.CacheUnsentTextMap))
+                .catch(err => console.error(err));
         });
-        updateFriendList(friendIds);
-        response('got it!');
-    });
-    listener('responseGetAllMessageIds').subscribe(({ data }) => {
-        getUnSentMessageIds(data)
-            .then(msgIds => Messager.sendToTab('content', 'getAllUnSendMessages', msgIds))
+    $Messager.receive(MESSAGER_SENDER.CONTENT, 'cacheUnsentText')
+        .subscribe(({ message }) => cacheUnsentText(message));
+    $Messager.receive(MESSAGER_SENDER.CONTENT, 'setCurrentFriend')
+        .subscribe(({ message, title, id }) => {
+            DEFAULT_SETTINGS.CurrentFriends = message;
+            Storager.set({ CurrentFriends: DEFAULT_SETTINGS.CurrentFriends })
+                .then(() => $Messager.replay(id).sendToTab(title, DEFAULT_SETTINGS.CurrentFriends))
+                .catch(err => console.error(err));
+        });
+    $Messager.receive(MESSAGER_SENDER.INJECTSCRIPT, 'gotNewMessages')
+        .subscribe(({ message }) => {
+            console.log('onMessageExternal', message);
+            if (message?.status === -1) return;
+            const friendIds = message.map(msg => {
+                addNewMessage(msg);
+                return msg.chat.id;
+            });
+            updateFriendList(friendIds);
+        });
+    $Messager.receive(MESSAGER_SENDER.INJECTSCRIPT, 'getAllMessageIds').subscribe(({ message }) => {
+        getUnSentMessageIds(message)
+            .then(msgIds => $Messager.sendToTab('getAllUnSendMessages', msgIds))
             .catch(err => console.error(err));
     });
-    listener('responseGetAllUnSendMessages').subscribe(({ data }) => {
-        return addMessageList(data);
-        const msgs = data.map(msg => handleMediaFile2File(msg));
-        console.log('responseGetAllUnSendMessages', data);
+    $Messager.receive(MESSAGER_SENDER.INJECTSCRIPT, 'getAllUnSendMessages').subscribe(({ message }) => {
+        return addMessageList(message);
+        const msgs = message.map(msg => handleMediaFile2File(msg));
+        console.log('getAllUnSendMessages', message);
         const promiseList = msgs.map(msg => ApiService.addContactInfo(addMessageParamsMaker(msg)));
         Promise.all(promiseList)
-            .then(() => console.log('responseGetAllUnSendMessages done'))
+            .then(() => console.log('getAllUnSendMessages done'))
             .catch(err => console.error(err));
     });
 }
@@ -190,7 +200,7 @@ async function addMessageList(data) {
             return addMessageParamsMaker(msg);
         }));
         msgs = msgs.filter(({ messageContext, messageType }) => messageType !== 'revoked' && messageContext != null && messageContext !== '')
-        console.warn(msgs);
+        console.log('unSendMessages', msgs);
         if (!msgs.length) return;
         ApiService.addContactInfoList(msgs)
             .then(() => console.log('responseGetAllUnSendMessages done'))
@@ -236,7 +246,7 @@ function addMessageParamsMaker(msg) {
 InitWindow().subscribe(({ TABID }) => {
     chrome.tabs.onUpdated.addListener((tabId, { status }, { url }) => {
         if (tabId === TABID && status === 'complete' && url.startsWith(LOGIN_URL + 'dashboard/workplace')) {
-            Messager.sendToTab('content', 'getAccessToken').then(({ value }) => {
+            $Messager.sendToTab('getAccessToken').subscribe(({ value }) => {
                 chrome.tabs.update(TABID, {
                     url: URL
                 }, () => {
