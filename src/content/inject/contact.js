@@ -1,5 +1,6 @@
 import { sendToExtension, postToExtension } from '../../common/scripts/util';
 import { MESSAGER_SENDER } from '../../common/modal/';
+
 function getAllMessageIds() {
     const chatIds = WAPI.getAllChatIds();
     const promiseList = chatIds.map(chatId => new Promise((resolve, reject) => {
@@ -58,7 +59,7 @@ window.addEventListener(
                 sendToExtension(MESSAGER_SENDER.BACKGROUND, title, getAllContacts());
                 break;
             case 'getAllChatIds':
-                postToExtension(id, MESSAGER_SENDER.CONTENT, title, WAPI.getAllChatIds());
+                postToExtension(MESSAGER_SENDER.CONTENT, title, WAPI.getAllChatIds(), id);
                 break;
             case 'getAllMessageIds':
                 getAllMessageIds()
