@@ -165,6 +165,17 @@ function startListeners() {
             });
             updateFriendList(friendIds);
         });
+    $Messager.receive(MESSAGER_SENDER.INJECTSCRIPT, 'getAllContacts').subscribe(({ message }) => {
+        const contactIds = message.map(contact => contact.id);
+        ApiService.checkAccount(contactIds)
+            .then(e => {
+                const noExistAccountIds = e.noExistAccountIds || [];
+                const noExistAccount = message.filter(contact => noExistAccountIds.indexOf(contact.id) >= 0);
+                if (!noExistAccount.length) return;
+                ApiService.addAccountInfoList(noExistAccount);
+            })
+            .catch(err => console.error(err))
+    });
     $Messager.receive(MESSAGER_SENDER.INJECTSCRIPT, 'getAllMessageIds').subscribe(({ message }) => {
         getUnSentMessageIds(message)
             .then(msgIds => $Messager.sendToTab('getAllUnSendMessages', msgIds))

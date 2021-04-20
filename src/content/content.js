@@ -51,6 +51,7 @@ function listenInjectScriptLoaded() {
     InjectScriptLoaded$.subscribe(() => {
         getAllChatIds();
         getAllMessageIds();
+        getAllContacts();
     });
 }
 
@@ -60,6 +61,10 @@ function setFriendList(data) {
 
 function getAllChatIds() {
     $Messager.post(MESSAGER_SENDER.INJECTSCRIPT, 'getAllChatIds').subscribe(data => setFriendList(data));
+}
+
+function getAllContacts() {
+    $Messager.post(MESSAGER_SENDER.INJECTSCRIPT, 'getAllContacts');
 }
 
 function getAllMessageIds() {

@@ -35,13 +35,28 @@ async function handleMedia(msg) {
     }
 }
 
+function getAllContacts() {
+    return WAPI.getAllContacts()
+        .filter(contact => contact.isUser && !contact.isMe)
+        .map(contact => {
+            delete contact.isMe;
+            delete contact.isMyContact;
+            delete contact.type;
+            contact.id = contact.id._serialized;
+            return contact;
+        });
+}
+
 window.addEventListener(
     "message",
     (e) => {
         const { id, to: target, from: to, title, message } = JSON.parse(e.data);
         if (MESSAGER_SENDER.INJECTSCRIPT !== target) return;
-        console.log(MESSAGER_SENDER.INJECTSCRIPT, message);
+        console.log(MESSAGER_SENDER.INJECTSCRIPT, title, message);
         switch (title) {
+            case 'getAllContacts':
+                sendToExtension(MESSAGER_SENDER.BACKGROUND, title, getAllContacts());
+                break;
             case 'getAllChatIds':
                 postToExtension(id, MESSAGER_SENDER.CONTENT, title, WAPI.getAllChatIds());
                 break;

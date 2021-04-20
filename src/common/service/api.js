@@ -87,6 +87,14 @@ class ApiService {
         // return console.log('contact/contactsInfo/checkPluginClientContactId', data), Promise.resolve(data);
         return instance.post('contact/contactsInfo/checkPluginClientContactId', data);
     }
+    static addAccountInfoList(data) {
+        // return console.log('contact/contactsInfo/checkPluginClientContactId', data), Promise.resolve(data);
+        return instance.post('customResource/customResource/add-list', data);
+    }
+    static checkAccount(data) {
+        // return console.log('contact/contactsInfo/checkPluginClientContactId', data), Promise.resolve(data);
+        return instance.post('customResource/customResource/check-account', data);
+    }
     static uploadFile(data) {
         // return console.log(this.FILE_HOST + 'group1/upload', data), Promise.resolve(data);
         const formData = new FormData();
