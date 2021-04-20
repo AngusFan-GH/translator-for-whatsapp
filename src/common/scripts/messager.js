@@ -25,8 +25,16 @@ function handleSendListener(data) {
 window.addEventListener('message', (e) => handlePostListener(e), false);
 function handlePostListener(event) {
     let { data, origin } = event;
-    if (!URL.startsWith(origin) || typeof data === 'object') return;
-    data = JSON.parse(data);
+    if (!URL.startsWith(origin) ||
+        typeof data === 'object' ||
+        data === '' ||
+        data == null) return;
+    try {
+        data = JSON.parse(data);
+        console.log('addListener', data);
+    } catch (err) {
+        console.error(err);
+    }
     if (data.to == null) return;
     Sub.next(data);
 }
