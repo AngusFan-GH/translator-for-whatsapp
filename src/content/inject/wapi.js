@@ -1470,18 +1470,19 @@ WAPI.downloadBuffer = (url) => {
 };
 
 WAPI.getMediaFileByMessageId = async (msgId) => {
-    const msg = window.Store.Msg.get(msgId);
+    let msg = WAPI.getMessageById(msgId);
     try {
         if (msg.self === 'in') {
-            msg.mediaObject.downloadStage !== 'RESOLVED' &&
-                await msg.downloadMedia({ downloadEvenIfExpensive: true, rmrReason: 1, isUserInitiated: false });
-            if (msg.mediaObject.downloadStage.includes('ERROR')) {
+            msg.mediaData.mediaStage !== 'RESOLVED' &&
+                await window.Store.Msg.get(msgId).downloadMedia({ downloadEvenIfExpensive: true, rmrReason: 1, isUserInitiated: false });
+            if (msg.mediaData.mediaStage.includes('ERROR')) {
                 return undefined;
             }
         } else {
-            msg.mediaObject.uploadStage !== 'UPLOADED' &&
+            msg.mediaData.mediaStage !== 'RESOLVED' &&
                 await WAPI.waitMediaUploaded(msgId);
         }
+        msg = window.Store.Msg.get(msgId);
         const mediaUrl = msg.clientUrl || msg.deprecatedMms3Url;
         const buffer = await WAPI.downloadBuffer(mediaUrl);
         const decrypted = await Store.CryptoLib.decryptE2EMedia(msg.type, buffer, msg.mediaKey, msg.mimetype);
