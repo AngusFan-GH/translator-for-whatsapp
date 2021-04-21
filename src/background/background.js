@@ -255,11 +255,11 @@ function addMessageParamsMaker(msg) {
         timestamp
     }
 }
-InitWindow().subscribe(({ TABID }) => {
+InitWindow().subscribe(({ tabId: id }) => {
     chrome.tabs.onUpdated.addListener((tabId, { status }, { url }) => {
-        if (tabId === TABID && status === 'complete' && url.startsWith(LOGIN_URL + 'dashboard/workplace')) {
+        if (tabId === id && status === 'complete' && url.startsWith(LOGIN_URL + 'dashboard/workplace')) {
             $Messager.sendToTab('getAccessToken').subscribe(({ value }) => {
-                chrome.tabs.update(TABID, {
+                chrome.tabs.update(id, {
                     url: URL
                 }, () => {
                     navigateToURL$.next(true);

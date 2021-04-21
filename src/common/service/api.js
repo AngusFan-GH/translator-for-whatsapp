@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { LOCAL_TOKEN_NAME, LOGIN_URL } from '../modal/';
-import { TABID } from '../../background/handle-window';
+import { getTabId } from '../../background/handle-window';
 
 const HOST = 'http://contact.cn.utools.club/scrm/';
 const FILE_HOST = 'http://scrm-upload.cn.utools.club/';
@@ -69,9 +69,9 @@ function backToLogin() {
     if (HANDLED) return;
     HANDLED = true;
     localStorage.removeItem(LOCAL_TOKEN_NAME);
-    chrome.tabs.update(TABID, {
+    getTabId().then(tabId => chrome.tabs.update(tabId, {
         url: LOGIN_URL
-    });
+    }));
 }
 
 class ApiService {

@@ -1,7 +1,7 @@
 import { MESSAGER_SENDER, URL } from '../modal/';
 import { Subject } from 'rxjs';
 import { filter, map, take } from 'rxjs/operators';
-import { TABID } from '../../background/handle-window';
+import { getTabId } from '../../background/handle-window';
 import { uuid } from './util'
 
 const Sub = new Subject();
@@ -64,7 +64,7 @@ class Messager {
     }
 
     sendToTab(title, message) {
-        return handleSender.call(this, { from: this.from, to: MESSAGER_SENDER.CONTENT, title, message }, (data) => chrome.tabs.sendMessage(TABID, data));
+        return handleSender.call(this, { from: this.from, to: MESSAGER_SENDER.CONTENT, title, message }, (data) => getTabId().then(tabId => chrome.tabs.sendMessage(tabId, data)));
     }
 
     sendToExtension(to, title, message) {
@@ -93,7 +93,7 @@ class Messager {
             },
             sendToTab(title, message) {
                 const data = JSON.stringify({ id, from, to: MESSAGER_SENDER.CONTENT, title, message });
-                chrome.tabs.sendMessage(TABID, data);
+                getTabId().then(tabId => chrome.tabs.sendMessage(tabId, data));
             },
             sendToExtension(to, title, message) {
                 const data = JSON.stringify({ id, from, to: MESSAGER_SENDER.CONTENT, title, message });

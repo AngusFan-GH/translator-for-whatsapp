@@ -37,15 +37,16 @@ function createWindow() {
   }, (window) => {
     ISINSTALLED = true;
     WINDOWID = window.id;
-    TABID = window.tabs[0].id;
-    Storager.set({ OpenedTabIds: TABID }).then(() => {
+    const tabId = window.tabs[0].id;
+    TABID = tabId;
+    Storager.set({ OpenedTabIds: tabId }).then(() => {
       chrome.browserAction.setIcon({
         path: {
           19: 'icons/19.png',
           38: 'icons/38.png',
         },
       });
-      completed$.next({ TABID });
+      completed$.next({ tabId });
     });
   });
 }
@@ -86,7 +87,16 @@ function InitWindow() {
   return completed$;
 }
 
+function getTabId() {
+  return new Promise((resolve, reject) => {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const tabId = tabs.find(tab => tab.url.startsWith(URL) || tab.url.startsWith(LOGIN_URL))?.id || TABID;
+      resolve(tabId);
+    })
+  })
+}
+
 export {
   InitWindow,
-  TABID
+  getTabId
 };
