@@ -89,6 +89,34 @@ async function updateFriendList(friendIds) {
     }
 }
 
+function updateContactInfo(friendIds) {
+    Storager.get('Contacts').then(({ Contacts }) => {
+        const newIds = friendIds.filter(id => Contacts.indexOf(id) === -1);
+        if (!newIds.length) return;
+        $Messager.sendToTab('getContactInfos', newIds);
+    })
+}
+function addAccountInfos(message, customResourceType = 'new') {
+    if (!message.length) return;
+    ApiService.addAccountInfoList(message.map(msg => {
+        msg.customResourceType = customResourceType;
+        return msg;
+    }));
+}
+
+function addAccountInfoExcludeExists(message) {
+    const contactIds = message.map(contact => contact.id);
+    ApiService.checkAccount(contactIds)
+        .then(({ result }) => {
+            const noExistAccountIds = result.noExistAccountIds || [];
+            const noExistAccount = message.filter(contact => noExistAccountIds.indexOf(contact.id) >= 0);
+            console.log('noExistAccount', noExistAccount);
+            if (!noExistAccount.length) return;
+            ApiService.addAccountInfoList(noExistAccount);
+        })
+        .catch(err => console.error(err));
+}
+
 async function cacheUnsentText(cacheUnsentText) {
     try {
         const { CurrentFriends, CacheUnsentTextMap } = await Storager.get(['CurrentFriends', 'CacheUnsentTextMap']);
@@ -164,19 +192,15 @@ function startListeners() {
                 return msg.chat.id;
             });
             updateFriendList(friendIds);
+            updateContactInfo(friendIds);
         });
-    $Messager.receive(MESSAGER_SENDER.INJECTSCRIPT, 'getAllContacts').subscribe(({ message }) => {
-        const contactIds = message.map(contact => contact.id);
-        ApiService.checkAccount(contactIds)
-            .then(({ result }) => {
-                const noExistAccountIds = result.noExistAccountIds || [];
-                const noExistAccount = message.filter(contact => noExistAccountIds.indexOf(contact.id) >= 0);
-                console.log('noExistAccount', noExistAccount);
-                if (!noExistAccount.length) return;
-                ApiService.addAccountInfoList(noExistAccount);
-            })
-            .catch(err => console.error(err));
-    });
+    $Messager.receive(MESSAGER_SENDER.INJECTSCRIPT, 'getContactInfos')
+        .subscribe(({ message }) => addAccountInfos(message));
+    $Messager.receive(MESSAGER_SENDER.INJECTSCRIPT, 'getAllContacts')
+        .subscribe(({ message }) => {
+            Storager.set({ Contacts: message.map(msg => msg.id) });
+            addAccountInfos(message, 'old');
+        });
     $Messager.receive(MESSAGER_SENDER.INJECTSCRIPT, 'getAllMessageIds').subscribe(({ message }) => {
         getUnSentMessageIds(message)
             .then(msgIds => $Messager.sendToTab('getAllUnSendMessages', msgIds))
@@ -228,6 +252,7 @@ function uploadFile(file) {
 
 function getUnSentMessageIds(msgIds) {
     const ids = msgIds.map(id => id.split('_').pop());
+    if (!ids.length) return;
     return ApiService.getUnSentMessageIds(ids)
         .then(({ result }) => Promise.resolve(result?.unSendMessageIds))
         .catch(err => console.error(err));

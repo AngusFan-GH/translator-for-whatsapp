@@ -52,7 +52,12 @@ function listenInjectScriptLoaded() {
         getAllChatIds();
         getAllMessageIds();
         getAllContacts();
+        listenGetContactInfos();
     });
+}
+function listenGetContactInfos() {
+    $Messager.receive(MESSAGER_SENDER.BACKGROUND, 'getContactInfos')
+        .subscribe(({ message, title }) => $Messager.post(MESSAGER_SENDER.INJECTSCRIPT, title, message));
 }
 
 function setFriendList(data) {

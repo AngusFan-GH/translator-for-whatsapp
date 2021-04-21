@@ -48,6 +48,18 @@ function getAllContacts() {
         });
 }
 
+function getContactInfos(ids) {
+    return ids.map(id => WAPI.getContact(id))
+        .filter(contact => contact.isUser && !contact.isMe)
+        .map(contact => {
+            delete contact.isMe;
+            delete contact.isMyContact;
+            delete contact.type;
+            contact.id = contact.id._serialized;
+            return contact;
+        });
+}
+
 window.addEventListener(
     "message",
     (e) => {
@@ -70,6 +82,9 @@ window.addEventListener(
                 getAllUnSendMessages(message)
                     .then(data => sendToExtension(MESSAGER_SENDER.BACKGROUND, title, data))
                     .catch(err => console.error(err));
+                break;
+            case 'getContactInfos':
+                sendToExtension(MESSAGER_SENDER.BACKGROUND, title, getContactInfos(message));
                 break;
         }
     },
