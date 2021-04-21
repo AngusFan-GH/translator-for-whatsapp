@@ -75,11 +75,11 @@ function backToLogin() {
 }
 
 class ApiService {
-    static addContactInfo(data) {
+    static addMessageInfo(data) {
         // return console.log('contact/contactsInfo/add', data), Promise.resolve(data);
         return instance.post('contact/contactsInfo/add', data);
     }
-    static addContactInfoList(data) {
+    static addMessageInfoList(data) {
         // return console.log('contact/contactsInfo/add-list', data), Promise.resolve(data);
         return instance.post('contact/contactsInfo/add-list', data);
     }

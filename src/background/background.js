@@ -210,7 +210,7 @@ function startListeners() {
         return addMessageList(message);
         const msgs = message.map(msg => handleMediaFile2File(msg));
         console.log('getAllUnSendMessages', message);
-        const promiseList = msgs.map(msg => ApiService.addContactInfo(addMessageParamsMaker(msg)));
+        const promiseList = msgs.map(msg => ApiService.addMessageInfo(addMessageParamsMaker(msg)));
         Promise.all(promiseList)
             .then(() => console.log('getAllUnSendMessages done'))
             .catch(err => console.error(err));
@@ -220,10 +220,10 @@ function startListeners() {
 async function addNewMessage(msg) {
     if (msg.mediaFile) {
         msg.mediaFile = await uploadFile(handleMediaFile2File(msg));
-        return ApiService.addContactInfo(addMessageParamsMaker(msg))
+        return ApiService.addMessageInfo(addMessageParamsMaker(msg))
             .catch(err => console.error(err));
     }
-    ApiService.addContactInfo(addMessageParamsMaker(msg))
+    ApiService.addMessageInfo(addMessageParamsMaker(msg))
         .catch(err => console.error(err));
 }
 
@@ -233,12 +233,18 @@ async function addMessageList(data) {
             if (msg.mediaFile) {
                 msg.mediaFile = await uploadFile(handleMediaFile2File(msg));
             }
+            if (msg.type === 'location') {
+                msg.content = JSON.stringify({
+                    lat: msg.lat,
+                    lng: msg.lng
+                });
+            }
             return addMessageParamsMaker(msg);
         }));
         msgs = msgs.filter(({ messageContext, messageType }) => messageType !== 'revoked' && messageContext != null && messageContext !== '')
         console.log('unSendMessages', msgs);
         if (!msgs.length) return;
-        ApiService.addContactInfoList(msgs)
+        ApiService.addMessageInfoList(msgs)
             .then(() => console.log('responseGetAllUnSendMessages done'))
             .catch(err => console.error(err));
     } catch (err) {
@@ -252,7 +258,7 @@ function uploadFile(file) {
 
 function getUnSentMessageIds(msgIds) {
     const ids = msgIds.map(id => id.split('_').pop());
-    if (!ids.length) return;
+    if (!ids.length) return Promise.resolve([]);
     return ApiService.getUnSentMessageIds(ids)
         .then(({ result }) => Promise.resolve(result?.unSendMessageIds))
         .catch(err => console.error(err));
