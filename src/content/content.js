@@ -48,13 +48,22 @@ function listenInjectScriptLoaded() {
         if (message === 'content/wapi.js') InjectWAPILoaded$.next(true);
         if (message === 'content/contact.js') InjectContactLoaded$.next(true);
     });
-    InjectScriptLoaded$.subscribe(() => {
-        getAllChatIds();
-        getAllMessageIds();
-        getAllContacts();
-        listenGetContactInfos();
-    });
+    InjectScriptLoaded$.subscribe(() => getMe());
 }
+
+function getMe() {
+    const title = 'getMe';
+    $Messager.post(MESSAGER_SENDER.INJECTSCRIPT, title);
+    $Messager.receive(MESSAGER_SENDER.BACKGROUND, title)
+        .subscribe(({ message: account }) => {
+            console.log('get account: ' + account);
+            getAllContacts();
+            getAllChatIds();
+            getAllMessageIds();
+            listenGetContactInfos();
+        });
+}
+
 function listenGetContactInfos() {
     $Messager.receive(MESSAGER_SENDER.BACKGROUND, 'getContactInfos')
         .subscribe(({ message, title }) => $Messager.post(MESSAGER_SENDER.INJECTSCRIPT, title, message));

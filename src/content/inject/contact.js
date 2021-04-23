@@ -1,9 +1,9 @@
 import { sendToExtension, postToExtension } from '../../common/scripts/util';
-import { MESSAGER_SENDER } from '../../common/modal/';
+import { MESSAGER_SENDER, BASE64_IMAGE_HEADER } from '../../common/modal/';
 
 function getAllMessageIds() {
     const chatIds = WAPI.getAllChatIds();
-    const promiseList = chatIds.map(chatId => new Promise((resolve, reject) => {
+    const promiseList = chatIds.map(chatId => new Promise((resolve) => {
         WAPI.loadAllEarlierMessages(chatId, () => {
             const msgIds = WAPI.getAllMessageIdsInChat(chatId, true);
             resolve(msgIds);
@@ -36,28 +36,19 @@ async function handleMedia(msg) {
     }
 }
 
-function getAllContacts() {
-    return WAPI.getAllContacts()
-        .filter(contact => contact.isUser && !contact.isMe)
-        .map(contact => {
-            delete contact.isMe;
-            delete contact.isMyContact;
-            delete contact.type;
-            contact.id = contact.id._serialized;
-            return contact;
-        });
+function getContactInfos(ids) {
+    const contacts = !ids ? WAPI.getAllContacts() : ids.map(id => WAPI.getContact(id));
+    return Promise.all(contacts.map(async (info) => {
+        info.avatar = await getBase64Avatar(info.id);
+        return info;
+    }));
 }
 
-function getContactInfos(ids) {
-    return ids.map(id => WAPI.getContact(id))
-        .filter(contact => contact.isUser && !contact.isMe)
-        .map(contact => {
-            delete contact.isMe;
-            delete contact.isMyContact;
-            delete contact.type;
-            contact.id = contact.id._serialized;
-            return contact;
-        });
+function getBase64Avatar(contactId) {
+    return new Promise((resolve) => WAPI.getProfilePicFromId(contactId, e => {
+        const avatar = e ? BASE64_IMAGE_HEADER + e : null;
+        resolve(avatar);
+    }));
 }
 
 window.addEventListener(
@@ -67,8 +58,20 @@ window.addEventListener(
         if (MESSAGER_SENDER.INJECTSCRIPT !== target) return;
         console.log(MESSAGER_SENDER.INJECTSCRIPT, title, message);
         switch (title) {
+            case 'getMe':
+                getContactInfos([WAPI.getMe().id])
+                    .then(contacts => sendToExtension(MESSAGER_SENDER.BACKGROUND, title, contacts[0]))
+                    .catch(err => console.error(err));
+                break;
             case 'getAllContacts':
-                sendToExtension(MESSAGER_SENDER.BACKGROUND, title, getAllContacts());
+                getContactInfos()
+                    .then(contacts => sendToExtension(MESSAGER_SENDER.BACKGROUND, title, contacts))
+                    .catch(err => console.error(err));
+                break;
+            case 'getContactInfos':
+                getContactInfos(message)
+                    .then(contacts => sendToExtension(MESSAGER_SENDER.BACKGROUND, title, contacts))
+                    .catch(err => console.error(err));
                 break;
             case 'getAllChatIds':
                 postToExtension(MESSAGER_SENDER.CONTENT, title, WAPI.getAllChatIds(), id);
@@ -82,9 +85,6 @@ window.addEventListener(
                 getAllUnSendMessages(message)
                     .then(data => sendToExtension(MESSAGER_SENDER.BACKGROUND, title, data))
                     .catch(err => console.error(err));
-                break;
-            case 'getContactInfos':
-                sendToExtension(MESSAGER_SENDER.BACKGROUND, title, getContactInfos(message));
                 break;
         }
     },

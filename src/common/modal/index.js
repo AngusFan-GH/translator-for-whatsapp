@@ -2,6 +2,8 @@ const URL = 'https://web.whatsapp.com/';
 const LOGIN_URL = 'http://scrm-web.cn.utools.club/';
 const TRANSLATIO_NDISPLAY_MODE = ['原文', '译文', '原/译'];
 const LOCAL_TOKEN_NAME = 'pro__Access-Token';
+const CURRENT_ACCOUNT = 'Current-Account';
+const BASE64_IMAGE_HEADER = 'data:image/jpg;base64,';
 
 const MESSAGER_SENDER = {
   BACKGROUND: 'background',
@@ -15,5 +17,7 @@ export {
   LOGIN_URL,
   TRANSLATIO_NDISPLAY_MODE,
   LOCAL_TOKEN_NAME,
-  MESSAGER_SENDER
+  CURRENT_ACCOUNT,
+  MESSAGER_SENDER,
+  BASE64_IMAGE_HEADER
 };

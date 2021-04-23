@@ -5,7 +5,7 @@ import Storager from '../common/scripts/storage';
 import { deepCopy, base64ToFile } from '../common/scripts/util';
 import Messager from '../common/scripts/messager';
 import { Subject } from 'rxjs';
-import { LOGIN_URL, URL, LOCAL_TOKEN_NAME, MESSAGER_SENDER } from '../common/modal/';
+import { LOGIN_URL, URL, LOCAL_TOKEN_NAME, MESSAGER_SENDER, CURRENT_ACCOUNT } from '../common/modal/';
 import ApiService from '../common/service/api';
 const Mime = require('mime-types');
 
@@ -96,12 +96,46 @@ function updateContactInfo(friendIds) {
         $Messager.sendToTab('getContactInfos', newIds);
     })
 }
+
 function addAccountInfos(message, customResourceType = 'new') {
     if (!message.length) return;
-    ApiService.addAccountInfoList(message.map(msg => {
-        msg.customResourceType = customResourceType;
-        return msg;
-    }));
+    const account = window.localStorage.getItem(CURRENT_ACCOUNT);
+    formatContactInfos(message)
+        .then(accounts => ApiService.addAccountInfoList(accounts.map(info => {
+            info.customResourceType = customResourceType;
+            info.account = account;
+            return info;
+        })))
+        .catch(err => console.error(err));
+}
+
+function formatContactInfos(list, isMe) {
+    try {
+        const infos = list.filter(contact => contact.isUser && (contact.isMe === !!isMe));
+        const promiseList = infos.map(async contact => {
+            delete contact.isMe;
+            delete contact.isMyContact;
+            delete contact.type;
+            delete contact.profilePicThumbObj;
+            contact.phone = '+' + contact.id.split('@')[0];
+            contact.avatar = await uploadAvatar(contact.avatar, contact.id);
+            return contact;
+        });
+        return Promise.all(promiseList);
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+async function uploadAvatar(avatar, id = '') {
+    try {
+        if (!avatar) return null;
+        const filename = 'avatar_' + id + '.jpg';
+        const file = base64ToFile(avatar, filename);
+        return await uploadFile(file);
+    } catch (err) {
+        console.error(err);
+    }
 }
 
 function addAccountInfoExcludeExists(message) {
@@ -111,8 +145,7 @@ function addAccountInfoExcludeExists(message) {
             const noExistAccountIds = result.noExistAccountIds || [];
             const noExistAccount = message.filter(contact => noExistAccountIds.indexOf(contact.id) >= 0);
             console.log('noExistAccount', noExistAccount);
-            if (!noExistAccount.length) return;
-            ApiService.addAccountInfoList(noExistAccount);
+            addAccountInfos(noExistAccount, 'new');
         })
         .catch(err => console.error(err));
 }
@@ -130,6 +163,14 @@ async function cacheUnsentText(cacheUnsentText) {
 function startListeners() {
     if (ListenersOpened) return;
     ListenersOpened = true;
+    $Messager.receive(MESSAGER_SENDER.INJECTSCRIPT, 'getMe').subscribe(({ message, title }) => {
+        const account = message.id;
+        localStorage.setItem(CURRENT_ACCOUNT, account);
+        $Messager.sendToTab(title, account);
+        formatContactInfos([message], true)
+            .then(accounts => ApiService.addSelfAccountInfos(accounts))
+            .catch(err => console.error(err));
+    });
     $Messager.receive(MESSAGER_SENDER.CONTENT, 'setLanguageSetting').subscribe(({ message, title, id }) => {
         const { from } = message;
         switch (from) {
@@ -198,7 +239,7 @@ function startListeners() {
         .subscribe(({ message }) => addAccountInfos(message));
     $Messager.receive(MESSAGER_SENDER.INJECTSCRIPT, 'getAllContacts')
         .subscribe(({ message }) => {
-            Storager.set({ Contacts: message.map(msg => msg.id) });
+            Storager.set({ Contacts: message.map(info => info.id) });
             addAccountInfos(message, 'old');
         });
     $Messager.receive(MESSAGER_SENDER.INJECTSCRIPT, 'getAllMessageIds').subscribe(({ message }) => {
@@ -229,7 +270,9 @@ async function addNewMessage(msg) {
 
 async function addMessageList(data) {
     try {
+        const account = localStorage.getItem(CURRENT_ACCOUNT);
         let msgs = await Promise.all(data.map(async msg => {
+            msg.account = account;
             if (msg.mediaFile) {
                 msg.mediaFile = await uploadFile(handleMediaFile2File(msg));
             }
