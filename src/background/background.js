@@ -127,11 +127,12 @@ function formatContactInfos(list, isMe) {
     }
 }
 
-async function uploadAvatar(avatar, id = '') {
+async function uploadAvatar(avatar, id) {
     try {
         if (!avatar) return null;
         const filename = 'avatar_' + id + '.jpg';
         const file = base64ToFile(avatar, filename);
+        console.log(file)
         return await uploadFile(file);
     } catch (err) {
         console.error(err);
