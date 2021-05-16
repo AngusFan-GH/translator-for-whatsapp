@@ -1,11 +1,7 @@
 import axios from 'axios';
-import { LOCAL_TOKEN_NAME, LOGIN_URL } from '../modal/';
-import { getTabId } from '../../background/handle-window';
 
 const HOST = 'http://contact.cn.utools.club/scrm/';
 const FILE_HOST = 'http://scrm-upload.cn.utools.club/';
-
-let HANDLED = false;
 
 const instance = axios.create({
     baseURL: HOST
@@ -13,8 +9,6 @@ const instance = axios.create({
 
 instance.interceptors.request.use(
     config => {
-        const token = window.localStorage.getItem(LOCAL_TOKEN_NAME);
-        token && (config.headers['X-Access-Token'] = token);
         return config;
     },
     error => {
@@ -46,7 +40,6 @@ instance.interceptors.response.use(
                     break;
                 case 500:
                     console.error('服务器错误500。');
-                    backToLogin();
                 case 502:
                     console.error('服务器错误502。');
                     const config = error.config;
@@ -64,15 +57,6 @@ instance.interceptors.response.use(
         }
     }
 );
-
-function backToLogin() {
-    if (HANDLED) return;
-    HANDLED = true;
-    localStorage.removeItem(LOCAL_TOKEN_NAME);
-    getTabId().then(tabId => chrome.tabs.update(tabId, {
-        url: LOGIN_URL
-    }));
-}
 
 class ApiService {
     static checkSelfAccount(data) {

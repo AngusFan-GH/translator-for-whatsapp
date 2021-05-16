@@ -60,7 +60,7 @@ window.addEventListener(
         switch (title) {
             case 'getMe':
                 getContactInfos([WAPI.getMe().id])
-                    .then(contacts => sendToExtension(MESSAGER_SENDER.BACKGROUND, title, contacts[0]))
+                    .then(contacts => sendToExtension(MESSAGER_SENDER.BACKGROUND, title, { ...contacts[0], pushname: Store.Me.pushname }))
                     .catch(err => console.error(err));
                 break;
             case 'getAllContacts':

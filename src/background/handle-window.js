@@ -1,4 +1,4 @@
-import { URL, LOGIN_URL } from '../common/modal/';
+import { URL } from '../common/modal/';
 import Storager from '../common/scripts/storage';
 import { Subject } from 'rxjs';
 
@@ -27,7 +27,7 @@ function createWindow() {
     top: screen.availTop + screen.availHeight / 2 - height / 2,
   };
   chrome.windows.create({
-    url: LOGIN_URL,
+    url: URL,
     focused: true,
     left: Math.floor(position.left),
     top: Math.floor(position.top),
@@ -90,10 +90,10 @@ function InitWindow() {
 function getTabId() {
   return new Promise((resolve, reject) => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      const tabId = tabs.find(tab => tab.url.startsWith(URL) || tab.url.startsWith(LOGIN_URL))?.id || TABID;
+      const tabId = tabs.find(tab => tab.url.startsWith(URL))?.id || TABID;
       resolve(tabId);
-    })
-  })
+    });
+  });
 }
 
 export {

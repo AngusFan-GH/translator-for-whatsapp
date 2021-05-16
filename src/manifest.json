@@ -1,7 +1,7 @@
 {
     "manifest_version": 2,
     "name": "WhatsApp Translator",
-    "version": "1.2.4",
+    "version": "1.2.5",
     "description": "A translator for WhatsApp",
     "icons": {
         "16": "icons/16.png",
@@ -33,14 +33,6 @@
                 "content/content.js"
             ],
             "run_at": "document_end"
-        },
-        {
-            "matches": [
-                "http://scrm-web.cn.utools.club/*"
-            ],
-            "js": [
-                "content/login.js"
-            ]
         }
     ],
     "externally_connectable": {

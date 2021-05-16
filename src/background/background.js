@@ -4,16 +4,12 @@ import { InitWindow } from './handle-window';
 import Storager from '../common/scripts/storage';
 import { deepCopy, base64ToFile } from '../common/scripts/util';
 import Messager from '../common/scripts/messager';
-import { Subject } from 'rxjs';
-import { LOGIN_URL, URL, LOCAL_TOKEN_NAME, MESSAGER_SENDER, CURRENT_ACCOUNT } from '../common/modal/';
+import { MESSAGER_SENDER, CURRENT_ACCOUNT } from '../common/modal/';
 import ApiService from '../common/service/api';
 const Mime = require('mime-types');
 
 const $Messager = new Messager(MESSAGER_SENDER.BACKGROUND);
 
-
-const gotToken$ = new Subject();
-const navigateToURL$ = new Subject();
 let ListenersOpened = false;
 
 const DEFAULT_SETTINGS = {
@@ -94,7 +90,7 @@ function updateContactInfo(friendIds) {
         const newIds = friendIds.filter(id => Contacts.indexOf(id) === -1);
         if (!newIds.length) return;
         $Messager.sendToTab('getContactInfos', newIds);
-    })
+    });
 }
 
 function addAccountInfos(message, customResourceType = 'new') {
@@ -111,7 +107,7 @@ function addAccountInfos(message, customResourceType = 'new') {
 
 function formatContactInfos(list, isMe) {
     try {
-        const infos = list.filter(contact => contact.isUser && (contact.isMe === !!isMe));
+        const infos = list.filter(contact => contact.isUser && (contact.isMe === !!isMe) && contact.isPSA === false);
         const promiseList = infos.map(async contact => {
             delete contact.isMe;
             delete contact.isMyContact;
@@ -132,7 +128,7 @@ async function uploadAvatar(avatar, id) {
         if (!avatar) return null;
         const filename = 'avatar_' + id + '.jpg';
         const file = base64ToFile(avatar, filename);
-        console.log(file)
+        console.log(file);
         return await uploadFile(file);
     } catch (err) {
         console.error(err);
@@ -188,7 +184,7 @@ function startListeners() {
                 break;
         }
     });
-    $Messager.receive(MESSAGER_SENDER.CONTENT, 'changeStyles')
+    $Messager.receive(MESSAGER_SENDER.OPTION, 'changeStyles')
         .subscribe(({ message }) => changeStyles(message));
     $Messager.receive(MESSAGER_SENDER.CONTENT, 'translateMessage')
         .subscribe(({ message, title, id }) => TRANSLATOR_MANAGER.translate(message)
@@ -285,7 +281,7 @@ async function addMessageList(data) {
             }
             return addMessageParamsMaker(msg);
         }));
-        msgs = msgs.filter(({ messageContext, messageType }) => messageType !== 'revoked' && messageContext != null && messageContext !== '')
+        msgs = msgs.filter(({ messageContext, messageType }) => messageType !== 'revoked' && messageContext != null && messageContext !== '');
         console.log('unSendMessages', msgs);
         if (!msgs.length) return;
         ApiService.addMessageInfoList(msgs)
@@ -328,28 +324,8 @@ function addMessageParamsMaker(msg) {
         sendAccountName: sender.pushname,
         toAccount: to,
         timestamp
-    }
+    };
 }
-InitWindow().subscribe(({ tabId: id }) => {
-    chrome.tabs.onUpdated.addListener((tabId, { status }, { url }) => {
-        if (tabId === id && status === 'complete' && url.startsWith(LOGIN_URL + 'dashboard/workplace')) {
-            $Messager.sendToTab('getAccessToken').subscribe(({ value }) => {
-                chrome.tabs.update(id, {
-                    url: URL
-                }, () => {
-                    navigateToURL$.next(true);
-                    gotToken$.next(value);
-                });
-            });
-        }
-    });
-});
-
-gotToken$.subscribe(token => {
-    console.log('token', token);
-    localStorage.setItem(LOCAL_TOKEN_NAME, token);
-});
-
-navigateToURL$.subscribe(() => startListeners());
+InitWindow().subscribe(() => startListeners());
 
 

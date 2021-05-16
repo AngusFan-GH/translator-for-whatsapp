@@ -1,6 +1,6 @@
 {
   "name": "translate-for-whatsapp",
-  "version": "1.2.4",
+  "version": "1.2.5",
   "description": "A translator for WhatsApp.",
   "main": "index.js",
   "directories": {
