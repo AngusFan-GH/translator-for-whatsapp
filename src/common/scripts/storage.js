@@ -3,11 +3,13 @@ import { filter, map } from 'rxjs/operators';
 import { deepCopy } from './util';
 
 const Sub = new Subject();
-chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === 'sync') {
-    Sub.next(changes);
-  }
-});
+if (chrome.storage) {
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'sync') {
+      Sub.next(changes);
+    }
+  });
+}
 const Subs = {};
 class Storager {
   static set(keys) {

@@ -7,6 +7,8 @@
 
 # dependencies
 /node_modules
+/src/popup/node_modules
+/src/popup/dist
 
 
 # IDE - VSCode

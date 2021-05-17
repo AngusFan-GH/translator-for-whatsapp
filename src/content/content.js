@@ -1,15 +1,21 @@
 import './content.css';
 import $ from 'jquery';
-import { fromEvent, Subject, zip } from 'rxjs';
+import { combineLatest, fromEvent, Subject, zip } from 'rxjs';
 import { TRANSLATIO_NDISPLAY_MODE, MESSAGER_SENDER } from '../common/modal/';
 import { LANGUAGES, BROWSER_LANGUAGES_MAP, LANGUAGES_TO_CHINESE } from '../common/modal/languages';
 import { injectScriptToPage } from './inject/injectScript';
 import Storager from '../common/scripts/storage';
 import Messager from '../common/scripts/messager';
-import { filter, map } from 'rxjs/operators';
+import { filter, first, map } from 'rxjs/operators';
+
+const IFRAME_URL = process.env.NODE_ENV === 'production' ?
+    `chrome-extension://${chrome.runtime.id}/popup/index.html` :
+    'http://localhost:8080/';
 
 const $Messager = new Messager(MESSAGER_SENDER.CONTENT);
-
+const PopupLoaded$ = new Subject();
+const getCustomPortraitFinish$ = new Subject();
+const SendCustomPortraitResult$ = combineLatest(PopupLoaded$, getCustomPortraitFinish$);
 const InjectContactLoaded$ = new Subject();
 const InjectWAPILoaded$ = new Subject();
 const InjectScriptLoaded$ = zip(InjectContactLoaded$, InjectWAPILoaded$);
@@ -41,6 +47,31 @@ function listenEnterChatPage() {
         listenMessageListChange(); // 监听消息列表改变
         renderMessageList(true); // 渲染消息列表
     });
+    enterChatPage$.pipe(first()).subscribe(() => {
+        injectIframeContainer();
+    });
+}
+
+function injectIframeContainer() {
+    const $iframeContaienr = $(`<iframe width="30%" 
+        height="100%" 
+        id="tfw_iframe_container"
+        name="tfw_iframe_container"
+        frameborder='no'
+        marginheight='0'
+        marginwidth='0'
+        allowTransparency='true'
+        src="${IFRAME_URL}">
+    </iframe>`);
+    $('#app .two').append($iframeContaienr);
+    $Messager.receive(MESSAGER_SENDER.POPUP, 'customPortraitPageInit').subscribe(() => {
+        PopupLoaded$.next(true);
+    });
+    const title = 'getCustomPortraitFinish';
+    $Messager.receive(MESSAGER_SENDER.BACKGROUND, title).subscribe(e => {
+        getCustomPortraitFinish$.next(e.message);
+    });
+    SendCustomPortraitResult$.subscribe(([_, e]) => $Messager.post(MESSAGER_SENDER.POPUP, title, e, IFRAME_URL, $iframeContaienr[0].contentWindow));
 }
 
 function listenInjectScriptLoaded() {
@@ -332,7 +363,7 @@ function defaultTranslatorChange() {
         $Messager.send(MESSAGER_SENDER.BACKGROUND, 'changeDefaultTranslator', e.target.value)
             .subscribe(() => {
                 renderMessageList(true);
-                handleInjectInputTranslateFlag()
+                handleInjectInputTranslateFlag();
             });
     });
 }

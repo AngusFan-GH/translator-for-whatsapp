@@ -113,6 +113,10 @@ module.exports = merge(common, {
                     to: 'icons'
                 },
                 {
+                    from: './src/popup/dist',
+                    to: 'popup'
+                },
+                {
                     from: './src/content/inject/wapi.js',
                     to: 'content',
                     transform(content) {

@@ -220,6 +220,12 @@ function startListeners() {
             Storager.set({ CurrentFriends: DEFAULT_SETTINGS.CurrentFriends })
                 .then(() => $Messager.replay(id).sendToTab(title, DEFAULT_SETTINGS.CurrentFriends))
                 .catch(err => console.error(err));
+            ApiService.getCustomPortraitByAccount({
+                customerAccount: message,
+                account: localStorage.getItem(CURRENT_ACCOUNT)
+            })
+                .then(e => $Messager.sendToTab('getCustomPortraitFinish', e?.result))
+                .catch(err => console.error(err));
         });
     $Messager.receive(MESSAGER_SENDER.INJECTSCRIPT, 'gotNewMessages')
         .subscribe(({ message }) => {

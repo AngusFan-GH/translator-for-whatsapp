@@ -1,14 +1,18 @@
 {
   "name": "translate-for-whatsapp",
-  "version": "1.2.5",
+  "version": "1.3.0",
   "description": "A translator for WhatsApp.",
   "main": "index.js",
   "directories": {
     "lib": "lib"
   },
   "scripts": {
-    "start": "webpack --watch --config webpack.dev.js",
-    "build": "webpack --config webpack.prod.js"
+    "install-popup": "cd ./src/popup/ && npm install",
+    "install-all": "npm install && npm run install-popup",
+    "start-popup": "cd ./src/popup/ && npm run serve",
+    "build-popup": "cd ./src/popup/ && npm run build",
+    "start": "concurrently \"webpack --watch --config webpack.dev.js\" \"npm run start-popup\"",
+    "build": "npm run build-popup && webpack --config webpack.prod.js"
   },
   "repository": {
     "type": "git",
@@ -32,6 +36,7 @@
     "babel": "^6.23.0",
     "babel-loader": "^8.0.6",
     "clean-webpack-plugin": "^3.0.0",
+    "concurrently": "^6.1.0",
     "core-js": "^3.6.4",
     "css-loader": "^3.4.2",
     "eslint": "^6.8.0",

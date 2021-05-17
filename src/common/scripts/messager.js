@@ -2,12 +2,14 @@ import { MESSAGER_SENDER, URL } from '../modal/';
 import { Subject } from 'rxjs';
 import { filter, map, take } from 'rxjs/operators';
 import { getTabId } from '../../background/handle-window';
-import { uuid } from './util'
+import { uuid } from './util';
 
 const Sub = new Subject();
-chrome.runtime.onMessage.addListener(data => handleSendListener(data));
-if (chrome.runtime.onMessageExternal) {
-    chrome.runtime.onMessageExternal.addListener(data => handleSendListener(data));
+if (chrome.runtime) {
+    chrome.runtime.onMessage.addListener(data => handleSendListener(data));
+    if (chrome.runtime.onMessageExternal) {
+        chrome.runtime.onMessageExternal.addListener(data => handleSendListener(data));
+    }
 }
 function handleSendListener(data) {
     if (typeof data === 'string') {
@@ -25,7 +27,8 @@ function handleSendListener(data) {
 window.addEventListener('message', (e) => handlePostListener(e), false);
 function handlePostListener(event) {
     let { data, origin } = event;
-    if (!URL.startsWith(origin) ||
+    if (
+        // !URL.startsWith(origin) ||
         typeof data === 'object' ||
         data === '' ||
         data == null) return;
@@ -71,8 +74,8 @@ class Messager {
         return handleSender.call(this, { from: this.from, to, title, message }, (data) => chrome.runtime.sendMessage(window.extensionId, data));
     }
 
-    post(to, title, message, targetOrigin = URL) {
-        return handleSender.call(this, { from: this.from, to, title, message }, (data) => window.postMessage(data, targetOrigin));
+    post(to, title, message, targetOrigin = URL, otherWindow) {
+        return handleSender.call(this, { from: this.from, to, title, message }, (data) => otherWindow ? otherWindow.postMessage(data, targetOrigin) : window.postMessage(data, targetOrigin));
     }
 
     receive(sender, title) {
@@ -103,7 +106,7 @@ class Messager {
                 const data = JSON.stringify({ id, from, to, title, message });
                 window.postMessage(data, targetOrigin);
             }
-        }
+        };
     }
 }
 

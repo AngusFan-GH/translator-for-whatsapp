@@ -107,3 +107,9 @@ footer .translate_flag .translate_flag_button {
 
     cursor: pointer;
 }
+
+#tfw_iframe_container {
+    z-index: 10;
+
+    border-left: 1px solid var(--border-stronger);
+}

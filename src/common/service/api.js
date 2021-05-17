@@ -87,6 +87,14 @@ class ApiService {
             baseURL: FILE_HOST
         });
     }
+    static getCustomPortraitByAccount(data) {
+        return instance.get('portrait/customPortrait/queryByAccount', {
+            params: data
+        });
+    }
+    static addCustomPortrait(data) {
+        return instance.post('portrait/customPortrait/add', data);
+    }
 }
 
 export default ApiService;

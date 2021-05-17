@@ -8,7 +8,8 @@ const MESSAGER_SENDER = {
   BACKGROUND: 'background',
   INJECTSCRIPT: 'injectScript',
   CONTENT: 'content',
-  OPTION: 'option'
+  OPTION: 'option',
+  POPUP: 'popup',
 };
 
 export {
