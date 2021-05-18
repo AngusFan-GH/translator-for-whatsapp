@@ -14,8 +14,12 @@ const IFRAME_URL = process.env.NODE_ENV === 'production' ?
 
 const $Messager = new Messager(MESSAGER_SENDER.CONTENT);
 const PopupLoaded$ = new Subject();
-const getCustomPortraitFinish$ = new Subject();
-const SendCustomPortraitResult$ = combineLatest(PopupLoaded$, getCustomPortraitFinish$);
+const GetCustomPortraitFinish$ = new Subject();
+const SendCustomPortraitResult$ = combineLatest(PopupLoaded$, GetCustomPortraitFinish$);
+const GetCustomInfo$ = new Subject();
+const SendCustomInfo$ = combineLatest(PopupLoaded$, GetCustomInfo$);
+const CurrentFriendChange$ = new Subject();
+const SendCurrentFriendChange$ = combineLatest(PopupLoaded$, CurrentFriendChange$);
 const InjectContactLoaded$ = new Subject();
 const InjectWAPILoaded$ = new Subject();
 const InjectScriptLoaded$ = zip(InjectContactLoaded$, InjectWAPILoaded$);
@@ -63,15 +67,23 @@ function injectIframeContainer() {
         allowTransparency='true'
         src="${IFRAME_URL}">
     </iframe>`);
+    $iframeContaienr.hide();
     $('#app .two').append($iframeContaienr);
     $Messager.receive(MESSAGER_SENDER.POPUP, 'customPortraitPageInit').subscribe(() => {
+        $iframeContaienr.show();
         PopupLoaded$.next(true);
     });
-    const title = 'getCustomPortraitFinish';
-    $Messager.receive(MESSAGER_SENDER.BACKGROUND, title).subscribe(e => {
-        getCustomPortraitFinish$.next(e.message);
+    $Messager.receive(MESSAGER_SENDER.BACKGROUND, 'getCustomPortraitFinish').subscribe(e => {
+        GetCustomPortraitFinish$.next(e.message);
     });
-    SendCustomPortraitResult$.subscribe(([_, e]) => $Messager.post(MESSAGER_SENDER.POPUP, title, e, IFRAME_URL, $iframeContaienr[0].contentWindow));
+    SendCustomPortraitResult$.subscribe(([_, e]) => $Messager.post(MESSAGER_SENDER.POPUP, 'getCustomPortraitFinish', e, IFRAME_URL, $iframeContaienr[0].contentWindow));
+
+    SendCustomInfo$.subscribe(([_, e]) => $Messager.post(MESSAGER_SENDER.POPUP, 'getCustomInfo', e, IFRAME_URL, $iframeContaienr[0].contentWindow));
+    SendCurrentFriendChange$.subscribe(([_, e]) => $Messager.post(MESSAGER_SENDER.POPUP, 'currentFriendChange', e, IFRAME_URL, $iframeContaienr[0].contentWindow));
+
+    $Messager.receive(MESSAGER_SENDER.POPUP, 'addCustomPortrait').subscribe(({ title, message }) => {
+        $Messager.send(MESSAGER_SENDER.BACKGROUND, title, message);
+    });
 }
 
 function listenInjectScriptLoaded() {
@@ -139,7 +151,9 @@ function listenLeaveChatPage() {
 
 function getCurrentFriend() {
     const currentId = $('#main .focusable-list-item[data-id]').attr('data-id').split('_')[1];
+    $Messager.post(MESSAGER_SENDER.INJECTSCRIPT, 'getCustomInfo', currentId).subscribe(e => GetCustomInfo$.next(e));
     $Messager.send(MESSAGER_SENDER.BACKGROUND, 'setCurrentFriend', currentId).subscribe(() => rerenderDefaultText());
+    CurrentFriendChange$.next(currentId);
 }
 
 function cacheUnsentText(tText, sText) {

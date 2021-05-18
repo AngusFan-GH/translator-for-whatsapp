@@ -88,7 +88,7 @@
     "extends": "airbnb-base",
     "env": {
       "browser": true,
-      "chrome": true
+      "webextensions": true
     }
   },
   "sideEffects": [

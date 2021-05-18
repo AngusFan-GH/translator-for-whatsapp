@@ -86,6 +86,11 @@ window.addEventListener(
                     .then(data => sendToExtension(MESSAGER_SENDER.BACKGROUND, title, data))
                     .catch(err => console.error(err));
                 break;
+            case 'getCustomInfo':
+                getContactInfos([message])
+                    .then(contacts => postToExtension(MESSAGER_SENDER.CONTENT, title, contacts[0], id))
+                    .catch(err => console.error(err));
+                break;
         }
     },
     false
