@@ -283,6 +283,9 @@ export default {
         color: #f1f1f1;
     }
     .user-info {
+        font-size: 16px;
+        font-weight: 600;
+
         display: flex;
 
         box-sizing: border-box;
@@ -335,6 +338,9 @@ export default {
                 margin-top: 15px;
             }
             &-label {
+                font-size: 14px;
+                font-weight: 600;
+
                 margin-bottom: 8px;
 
                 color: #42b983;
