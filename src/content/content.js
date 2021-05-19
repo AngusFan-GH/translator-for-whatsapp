@@ -12,6 +12,7 @@ const IFRAME_URL = process.env.NODE_ENV === 'production' ?
     `chrome-extension://${chrome.runtime.id}/popup/index.html` :
     'http://localhost:8080/';
 
+const EnterChatPage$ = new Subject();
 const $Messager = new Messager(MESSAGER_SENDER.CONTENT);
 const PopupLoaded$ = new Subject();
 const GetCustomPortraitFinish$ = new Subject();
@@ -39,20 +40,73 @@ function listenEnterChatPage() {
     }));
     // 联系人页面加载完成
     const pageInited$ = appDOMNodeInserted$.pipe(filter(({ className }) => typeof className === 'string' && className.includes('two')));
-    pageInited$.subscribe(() => {
+    pageInited$.pipe(first()).subscribe(() => {
         listenInjectScriptLoaded(); // 监听注入脚本加载完成
         injectScriptToPage(); // 向页面注入脚本
     });
     //进入聊天对话界面
-    const enterChatPage$ = appDOMNodeInserted$.pipe(filter(({ id }) => typeof id === 'string' && id === 'main'));
-    enterChatPage$.subscribe(() => {
+    appDOMNodeInserted$.pipe(filter(({ id }) => typeof id === 'string' && id === 'main')).subscribe(() => EnterChatPage$.next(true));
+    EnterChatPage$.subscribe(() => {
         injectInputContainer(); // 注入辅助输入框
         getCurrentFriend(); // 获取当前对话用户
         listenMessageListChange(); // 监听消息列表改变
         renderMessageList(true); // 渲染消息列表
     });
-    enterChatPage$.pipe(first()).subscribe(() => {
+    EnterChatPage$.pipe(first()).subscribe(() => {
         injectIframeContainer();
+    });
+
+    injectIframeContainerBtn();
+}
+
+function injectIframeContainerBtn() {
+
+    combineLatest(PopupLoaded$, EnterChatPage$).subscribe(() => {
+        const $openIframeContainerBtn = $(`<div>
+            <div class="_2n-zq">
+                <div aria-disabled="false" role="button" tabindex="0" data-tab="8" title="打开辅助面板" aria-label="打开辅助面板">
+                    <span class="panel-btn">
+                        <svg t="1621433103257" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1189" width="24" height="24">
+                            <path fill="currentColor" d="M511.44 162.76c-231.04 0-429.74 143.28-508.32 346.6 78.6 203.32 277.28 346.6 508.32 346.6 231.04 0 429.8-143.28 508.32-346.6-78.52-203.32-277.28-346.6-508.32-346.6m0 577.64c-129.36 0-231.04-101.62-231.04-231.04 0-129.44 101.68-231.04 231.04-231.04 129.44 0 231.04 101.62 231.04 231.04S640.88 740.4 511.44 740.4m0-369.68c-78.52 0-138.64 60.12-138.64 138.64 0 78.52 60.12 138.64 138.64 138.64 78.6 0 138.64-60.12 138.64-138.64 0-78.52-60.04-138.64-138.64-138.64" p-id="1190"></path>
+                        </svg>
+                    </span>
+                </div>
+            </div>
+        </div>`);
+        const $closeIframeContainerBtn = $(`<div>
+            <div class="_2n-zq">
+                <div aria-disabled="false" role="button" tabindex="0" data-tab="8" title="关闭辅助面板" aria-label="关闭辅助面板">
+                    <span class="panel-btn">
+                    <svg t="1621434583569" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2779" width="24" height="24">
+                        <path d="M599.54 491.87l57.84 55.35c2.76-11.37 4.62-23.04 4.62-35.22 0-82.71-67.29-150-150-150-14.46 0-28.14 2.7-41.4 6.54l57.6 55.11c35.31 6.45 63.33 33.48 71.34 68.22z m-46.05 163.56l-57.54-55.08c-35.43-6.42-63.6-33.51-71.55-68.4l-57.78-55.26c-2.76 11.4-4.62 23.1-4.62 35.31 0 82.71 67.29 150 150 150 14.49 0 28.2-2.73 41.49-6.57zM199.76 160.31c-12-11.43-30.99-11.01-42.42 0.96-11.46 11.97-11.04 30.96 0.93 42.42l690 660A29.91 29.91 0 0 0 869 872c7.92 0 15.78-3.12 21.69-9.27 11.46-11.97 11.01-30.96-0.93-42.42l-690-660z" p-id="2780" fill="#bfbfbf"></path><path d="M512 782c-158.7 0-314.37-106.47-388.95-266.19-0.15-0.57-0.33-1.08-0.51-1.62-0.06-0.51-0.21-0.93-0.27-1.23-0.03-0.33-0.27-0.75-0.27-1.17v-0.39c0-0.69 0.42-1.38 0.51-2.07 0.12-0.42 0.33-0.78 0.45-1.2 27.87-60.12 67.5-112.74 114.51-154.98l-43.41-41.49c-52.02 47.49-95.7 106.08-126.21 172.74-0.99 1.98-1.68 3.84-2.13 5.52a15.625 15.625 0 0 0-0.6 1.5c-1.65 4.74-1.65 7.95-1.53 7.23-0.75 3.51-1.5 10.5-1.5 10.5-0.21 2.1-0.18 3.78 0.06 5.88 0 0 0.66 12.63 0.99 13.89l4.26 12.78C150.5 723.26 329.18 843.65 512 843.65c65.46 0 130.29-16.68 190.41-44.94l-46.74-45.54C609.62 771.8 560.96 782 512 782z m450-269.91c0-5.43-0.93-9.93-1.2-10.44-0.18-2.73-1.08-7.59-1.95-10.14-0.24-0.63-0.51-1.29-0.78-1.95-0.45-1.47-0.96-2.91-1.5-4.05C873.56 303.95 694.91 182 512 182c-65.4 0-130.2 15.81-190.32 44.13l46.74 44.67C414.47 252.2 463.07 242 512 242c159.15 0 315.18 106.92 388.83 265.95 0.09 0.3 0.15 0.57 0.24 0.75 0.06 0.27 0.15 0.57 0.24 0.81 0.15 1.2 0.3 2.34 0.45 2.97-0.15 0.63-0.24 1.2-0.36 1.83-0.03 0.15-0.09 0.3-0.12 0.45-0.12 0.39-0.27 0.81-0.39 1.29-27.84 60-67.38 112.53-114.33 154.74L830 712.34c51.87-47.34 95.37-105.63 125.64-171.9 1.29-2.34 2.1-4.53 2.67-6.48 0.24-0.57 0.45-1.11 0.63-1.65 1.44-4.2 1.74-7.83 1.62-7.83 0 0 0 0.03-0.03 0.03 0.57-2.88 1.47-7.2 1.47-12.42z" p-id="2781" fill="currentColor"></path>
+                    </svg>
+                    </span>
+                </div>
+            </div>
+        </div>`);
+
+        fromEvent($openIframeContainerBtn, 'click').subscribe(() => {
+            $iframeContaienr.show();
+            $closeIframeContainerBtn.show();
+            $openIframeContainerBtn.hide();
+        });
+        fromEvent($closeIframeContainerBtn, 'click').subscribe(() => {
+            $iframeContaienr.hide();
+            $closeIframeContainerBtn.hide();
+            $openIframeContainerBtn.show();
+        });
+        const $btnContainer = $($('#main header').children("div:last-child").children().get(0));
+        $btnContainer.append($openIframeContainerBtn.hide());
+        $btnContainer.append($closeIframeContainerBtn.hide());
+        const $iframeContaienr = $('#tfw_iframe_container');
+        const isHidden = $iframeContaienr.css('display') === 'none';
+        if (!isHidden) {
+            $openIframeContainerBtn.hide();
+            $closeIframeContainerBtn.show();
+        } else {
+            $openIframeContainerBtn.show();
+            $closeIframeContainerBtn.hide();
+        }
     });
 }
 
@@ -69,6 +123,7 @@ function injectIframeContainer() {
     </iframe>`);
     $iframeContaienr.hide();
     $('#app .two').append($iframeContaienr);
+
     $Messager.receive(MESSAGER_SENDER.POPUP, 'customPortraitPageInit').subscribe(() => {
         $iframeContaienr.show();
         PopupLoaded$.next(true);
