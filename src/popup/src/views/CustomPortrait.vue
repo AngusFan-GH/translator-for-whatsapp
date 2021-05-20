@@ -51,6 +51,7 @@
             <el-input
               v-model="item.value"
               :placeholder="`请输入${item.labelField}`"
+              clearable
             ></el-input>
           </div>
           <div v-if="item.labelType === 'Radio'">
@@ -78,6 +79,7 @@
           <div v-if="item.labelType === 'TimePicker'">
             <el-time-picker
               v-model="item.value"
+              value-format="timestamp"
               :placeholder="`请选择${item.labelField}`"
             >
             </el-time-picker>
@@ -86,6 +88,7 @@
             <el-date-picker
               v-model="item.value"
               type="date"
+              value-format="timestamp"
               :placeholder="`请选择${item.labelField}`"
             >
             </el-date-picker>
@@ -94,6 +97,7 @@
             <el-date-picker
               v-model="item.value"
               type="datetime"
+              value-format="timestamp"
               :placeholder="`请选择${item.labelField}`"
             >
             </el-date-picker>
@@ -102,6 +106,7 @@
             <el-select
               v-model="item.value"
               :placeholder="`请选择${item.labelField}`"
+              clearable
             >
               <el-option
                 v-for="select in item.dictItemValue"
@@ -124,11 +129,11 @@
           <div v-if="item.labelType === 'Rate'">
             <el-rate
               v-model="item.value"
-              :max="item.dictItemValue.total"
+              :max="+item.dictItemValue.total"
               allow-half
               show-score
               text-color="#ff9900"
-              score-template="{value}分"
+              :score-template="item.dictItemValue.template"
             ></el-rate>
           </div>
         </div>
@@ -191,7 +196,13 @@ export default {
               const res = { ...item };
               if (res.dictItemValue) {
                 if (res.labelType === "Rate") {
-                  res.dictItemValue = { ...JSON.parse(res.dictItemValue) };
+                  res.dictItemValue = Object.assign(
+                    {},
+                    ...JSON.parse(res.dictItemValue)
+                  );
+                  res.dictItemValue.template = res.dictItemValue.template
+                    ? res.dictItemValue.template.replace("value", "{value}")
+                    : "";
                 } else {
                   res.dictItemValue = JSON.parse(res.dictItemValue).map(
                     (val) => ({
@@ -204,6 +215,9 @@ export default {
               if (res.labelType === "Checkbox") {
                 res.value = [];
               }
+              res.value = res.labelContent
+                ? JSON.parse(res.labelContent)
+                : res.value;
               return res;
             });
           this.formLoading = false;
@@ -234,16 +248,10 @@ export default {
     },
     dosubmit() {
       // this.loading = true;
-      const customPortrait = this.formData
-        .filter(
-          (item) =>
-            (item.value != null && !Array.isArray(item.value)) ||
-            (Array.isArray(item.value) && item.value.length)
-        )
-        .map((item) => ({
-          id: item.id,
-          labelContent: item.value,
-        }));
+      const customPortrait = this.formData.map((item) => ({
+        id: item.id,
+        labelContent: JSON.stringify(item.value),
+      }));
       console.log("addCustomPortrait", customPortrait, this.userInfo.id);
       this.$Messager.post(
         MESSAGER_SENDER.CONTENT,

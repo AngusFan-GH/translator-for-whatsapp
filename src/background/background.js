@@ -260,7 +260,7 @@ function startListeners() {
             .catch(err => console.error(err));
     });
     $Messager.receive(MESSAGER_SENDER.CONTENT, 'addCustomPortrait').subscribe(({ message }) => {
-        const params = { ...message, account: localStorage.getItem(CURRENT_ACCOUNT) };
+        const params = [{ ...message, account: localStorage.getItem(CURRENT_ACCOUNT) }];
         console.log('addCustomPortrait', params);
         ApiService.addCustomPortrait(params);
     });
