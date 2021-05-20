@@ -32,7 +32,14 @@
           </div>
         </div>
         <div class="user-info-right inhert-text">
-          <div class="user-info-name">{{ userInfo.pushname }}</div>
+          <div class="user-info-name">
+            {{
+              userInfo.verifiedName ||
+              userInfo.pushname ||
+              userInfo.name ||
+              userInfo.formattedName
+            }}
+          </div>
           <div class="user-info-account">{{ userInfo.id }}</div>
         </div>
       </template>
