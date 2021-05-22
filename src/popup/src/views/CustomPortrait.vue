@@ -60,6 +60,7 @@
                 v-model="item.value"
                 :placeholder="`请输入${item.labelField}`"
                 clearable
+                :disabled="btnLoading"
               ></el-input>
             </div>
             <div v-if="item.labelType === 'Radio'">
@@ -68,6 +69,7 @@
                 v-model="item.value"
                 :label="radio.key"
                 :key="radio.key"
+                :disabled="btnLoading"
                 >{{ radio.value }}</el-radio
               >
             </div>
@@ -77,18 +79,35 @@
                   v-for="checkbox in item.dictItemValue"
                   :label="checkbox.key"
                   :key="checkbox.key"
+                  :disabled="btnLoading"
                   >{{ checkbox.value }}</el-checkbox
                 >
               </el-checkbox-group>
             </div>
             <div v-if="item.labelType === 'InputNumber'">
-              <el-input-number v-model="item.value"></el-input-number>
+              <el-input-number
+                v-model="item.value"
+                :precision="
+                  (item.dictItemValue && +item.dictItemValue.precision) || 0
+                "
+                :step="
+                  (item.dictItemValue && +item.dictItemValue.precision) || 1
+                "
+                :min="
+                  (item.dictItemValue && +item.dictItemValue.min) || -Infinity
+                "
+                :max="
+                  (item.dictItemValue && +item.dictItemValue.max) || Infinity
+                "
+                :disabled="btnLoading"
+              ></el-input-number>
             </div>
             <div v-if="item.labelType === 'TimePicker'">
               <el-time-picker
                 v-model="item.value"
                 value-format="timestamp"
                 :placeholder="`请选择${item.labelField}`"
+                :disabled="btnLoading"
               >
               </el-time-picker>
             </div>
@@ -98,6 +117,7 @@
                 type="date"
                 value-format="timestamp"
                 :placeholder="`请选择${item.labelField}`"
+                :disabled="btnLoading"
               >
               </el-date-picker>
             </div>
@@ -107,6 +127,7 @@
                 type="datetime"
                 value-format="timestamp"
                 :placeholder="`请选择${item.labelField}`"
+                :disabled="btnLoading"
               >
               </el-date-picker>
             </div>
@@ -115,6 +136,7 @@
                 v-model="item.value"
                 :placeholder="`请选择${item.labelField}`"
                 clearable
+                :disabled="btnLoading"
               >
                 <el-option
                   v-for="select in item.dictItemValue"
@@ -131,17 +153,21 @@
                 :rows="5"
                 :placeholder="`请输入${item.labelField}`"
                 v-model="item.value"
+                :disabled="btnLoading"
               >
               </el-input>
             </div>
             <div v-if="item.labelType === 'Rate'">
               <el-rate
                 v-model="item.value"
-                :max="+item.dictItemValue.total"
+                :max="item.dictItemValue && +item.dictItemValue.total"
                 allow-half
                 show-score
                 text-color="#ff9900"
-                :score-template="item.dictItemValue.template"
+                :score-template="
+                  item.dictItemValue && item.dictItemValue.template
+                "
+                :disabled="btnLoading"
               ></el-rate>
             </div>
           </div>
@@ -210,21 +236,29 @@ export default {
             .map((item) => {
               const res = { ...item };
               if (res.dictItemValue) {
-                if (res.labelType === "Rate") {
-                  res.dictItemValue = Object.assign(
-                    {},
-                    ...JSON.parse(res.dictItemValue)
-                  );
-                  res.dictItemValue.template = res.dictItemValue.template
-                    ? res.dictItemValue.template.replace("value", "{value}")
-                    : "";
-                } else {
-                  res.dictItemValue = JSON.parse(res.dictItemValue).map(
-                    (val) => ({
-                      value: Object.keys(val)[0],
-                      key: Object.values(val)[0],
-                    })
-                  );
+                switch (res.labelType) {
+                  case "InputNumber":
+                    res.dictItemValue = Object.assign(
+                      {},
+                      ...JSON.parse(res.dictItemValue)
+                    );
+                    break;
+                  case "Rate":
+                    res.dictItemValue = Object.assign(
+                      {},
+                      ...JSON.parse(res.dictItemValue)
+                    );
+                    res.dictItemValue.template = res.dictItemValue.template
+                      ? res.dictItemValue.template.replace("value", "{value}")
+                      : "";
+                    break;
+                  default:
+                    res.dictItemValue = JSON.parse(res.dictItemValue).map(
+                      (val) => ({
+                        value: Object.keys(val)[0],
+                        key: Object.values(val)[0],
+                      })
+                    );
                 }
               }
               if (res.labelType === "Checkbox") {
@@ -265,7 +299,7 @@ export default {
       this.btnLoading = true;
       const customPortrait = this.formData.map((item) => ({
         id: item.id,
-        labelContent: JSON.stringify(item.value),
+        labelContent: JSON.stringify(item.value || null),
       }));
       console.log("addCustomPortrait", customPortrait, this.userInfo.id);
       this.$Messager
