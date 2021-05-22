@@ -1,10 +1,10 @@
 import axios from 'axios';
 
-const HOST = 'http://contact.cn.utools.club/scrm/';
 const FILE_HOST = 'http://scrm-upload.cn.utools.club/';
+const BASE_URL = process.env.BASE_URL;
 
 const instance = axios.create({
-    baseURL: HOST
+    baseURL: BASE_URL
 });
 
 instance.interceptors.request.use(

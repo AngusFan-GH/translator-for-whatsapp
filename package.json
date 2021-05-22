@@ -12,6 +12,7 @@
     "start-popup": "cd ./src/popup/ && npm run serve",
     "build-popup": "cd ./src/popup/ && npm run build",
     "start": "concurrently \"webpack --watch --config webpack.dev.js\" \"npm run start-popup\"",
+    "test": "npm run build-popup && webpack --config webpack.qa.js",
     "build": "npm run build-popup && webpack --config webpack.prod.js"
   },
   "repository": {

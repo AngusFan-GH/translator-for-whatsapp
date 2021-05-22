@@ -1,11 +1,11 @@
 const common = require('./webpack.build-common.js');
 const webpack = require("webpack");
-const prod = require('./_env/prod');
+const dev = require('./_env/dev');
 
-module.exports = common('prod', {
+module.exports = common('dev', {
     plugins: [
         new webpack.DefinePlugin({
-            'process.env': prod,
+            'process.env': dev,
         })
     ]
 });

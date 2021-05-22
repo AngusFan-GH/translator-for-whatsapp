@@ -12,6 +12,8 @@ const IFRAME_URL = process.env.NODE_ENV === 'production' ?
     `chrome-extension://${chrome.runtime.id}/popup/index.html` :
     'http://localhost:8080/';
 
+console.log(process.env.NODE_ENV);
+
 const EnterChatPage$ = new Subject();
 const $Messager = new Messager(MESSAGER_SENDER.CONTENT);
 const PopupLoaded$ = new Subject();
