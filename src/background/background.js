@@ -259,10 +259,12 @@ function startListeners() {
             .then(() => console.log('getAllUnSendMessages done'))
             .catch(err => console.error(err));
     });
-    $Messager.receive(MESSAGER_SENDER.CONTENT, 'addCustomPortrait').subscribe(({ message }) => {
+    $Messager.receive(MESSAGER_SENDER.CONTENT, 'addCustomPortrait').subscribe(({ message, title, id }) => {
         const params = [{ ...message, account: localStorage.getItem(CURRENT_ACCOUNT) }];
         console.log('addCustomPortrait', params);
-        ApiService.addCustomPortrait(params);
+        ApiService.addCustomPortrait(params)
+            .then(e => $Messager.replay(id).sendToTab(title, e))
+            .catch(err => $Messager.replay(id).sendToTab(title, err?.data));
     });
 }
 

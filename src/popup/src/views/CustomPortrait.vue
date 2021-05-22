@@ -52,102 +52,110 @@
       element-loading-background="rgba(0, 0, 0, 0)"
     >
       <template v-if="!formLoading">
-        <div class="form-info-item" v-for="item in formData" :key="item.id">
-          <div class="form-info-item-label">{{ item.labelField }}</div>
-          <div v-if="item.labelType === 'Input'">
-            <el-input
-              v-model="item.value"
-              :placeholder="`请输入${item.labelField}`"
-              clearable
-            ></el-input>
-          </div>
-          <div v-if="item.labelType === 'Radio'">
-            <el-radio
-              v-for="radio in item.dictItemValue"
-              v-model="item.value"
-              :label="radio.key"
-              :key="radio.key"
-              >{{ radio.value }}</el-radio
-            >
-          </div>
-          <div v-if="item.labelType === 'Checkbox'">
-            <el-checkbox-group v-model="item.value">
-              <el-checkbox
-                v-for="checkbox in item.dictItemValue"
-                :label="checkbox.key"
-                :key="checkbox.key"
-                >{{ checkbox.value }}</el-checkbox
+        <template v-if="formData.length">
+          <div class="form-info-item" v-for="item in formData" :key="item.id">
+            <div class="form-info-item-label">{{ item.labelField }}</div>
+            <div v-if="item.labelType === 'Input'">
+              <el-input
+                v-model="item.value"
+                :placeholder="`请输入${item.labelField}`"
+                clearable
+              ></el-input>
+            </div>
+            <div v-if="item.labelType === 'Radio'">
+              <el-radio
+                v-for="radio in item.dictItemValue"
+                v-model="item.value"
+                :label="radio.key"
+                :key="radio.key"
+                >{{ radio.value }}</el-radio
               >
-            </el-checkbox-group>
-          </div>
-          <div v-if="item.labelType === 'InputNumber'">
-            <el-input-number v-model="item.value"></el-input-number>
-          </div>
-          <div v-if="item.labelType === 'TimePicker'">
-            <el-time-picker
-              v-model="item.value"
-              value-format="timestamp"
-              :placeholder="`请选择${item.labelField}`"
-            >
-            </el-time-picker>
-          </div>
-          <div v-if="item.labelType === 'DatePicker'">
-            <el-date-picker
-              v-model="item.value"
-              type="date"
-              value-format="timestamp"
-              :placeholder="`请选择${item.labelField}`"
-            >
-            </el-date-picker>
-          </div>
-          <div v-if="item.labelType === 'DateTimePicker'">
-            <el-date-picker
-              v-model="item.value"
-              type="datetime"
-              value-format="timestamp"
-              :placeholder="`请选择${item.labelField}`"
-            >
-            </el-date-picker>
-          </div>
-          <div v-if="item.labelType === 'Select'">
-            <el-select
-              v-model="item.value"
-              :placeholder="`请选择${item.labelField}`"
-              clearable
-            >
-              <el-option
-                v-for="select in item.dictItemValue"
-                :value="select.key"
-                :label="select.value"
-                :key="select.key"
+            </div>
+            <div v-if="item.labelType === 'Checkbox'">
+              <el-checkbox-group v-model="item.value">
+                <el-checkbox
+                  v-for="checkbox in item.dictItemValue"
+                  :label="checkbox.key"
+                  :key="checkbox.key"
+                  >{{ checkbox.value }}</el-checkbox
+                >
+              </el-checkbox-group>
+            </div>
+            <div v-if="item.labelType === 'InputNumber'">
+              <el-input-number v-model="item.value"></el-input-number>
+            </div>
+            <div v-if="item.labelType === 'TimePicker'">
+              <el-time-picker
+                v-model="item.value"
+                value-format="timestamp"
+                :placeholder="`请选择${item.labelField}`"
               >
-              </el-option>
-            </el-select>
+              </el-time-picker>
+            </div>
+            <div v-if="item.labelType === 'DatePicker'">
+              <el-date-picker
+                v-model="item.value"
+                type="date"
+                value-format="timestamp"
+                :placeholder="`请选择${item.labelField}`"
+              >
+              </el-date-picker>
+            </div>
+            <div v-if="item.labelType === 'DateTimePicker'">
+              <el-date-picker
+                v-model="item.value"
+                type="datetime"
+                value-format="timestamp"
+                :placeholder="`请选择${item.labelField}`"
+              >
+              </el-date-picker>
+            </div>
+            <div v-if="item.labelType === 'Select'">
+              <el-select
+                v-model="item.value"
+                :placeholder="`请选择${item.labelField}`"
+                clearable
+              >
+                <el-option
+                  v-for="select in item.dictItemValue"
+                  :value="select.key"
+                  :label="select.value"
+                  :key="select.key"
+                >
+                </el-option>
+              </el-select>
+            </div>
+            <div v-if="item.labelType === 'Textarea'">
+              <el-input
+                type="textarea"
+                :rows="5"
+                :placeholder="`请输入${item.labelField}`"
+                v-model="item.value"
+              >
+              </el-input>
+            </div>
+            <div v-if="item.labelType === 'Rate'">
+              <el-rate
+                v-model="item.value"
+                :max="+item.dictItemValue.total"
+                allow-half
+                show-score
+                text-color="#ff9900"
+                :score-template="item.dictItemValue.template"
+              ></el-rate>
+            </div>
           </div>
-          <div v-if="item.labelType === 'Textarea'">
-            <el-input
-              type="textarea"
-              :rows="5"
-              :placeholder="`请输入${item.labelField}`"
-              v-model="item.value"
-            >
-            </el-input>
-          </div>
-          <div v-if="item.labelType === 'Rate'">
-            <el-rate
-              v-model="item.value"
-              :max="+item.dictItemValue.total"
-              allow-half
-              show-score
-              text-color="#ff9900"
-              :score-template="item.dictItemValue.template"
-            ></el-rate>
-          </div>
-        </div>
+        </template>
+        <div class="form-info-empty" v-else>未配置用户画像信息</div>
       </template>
     </div>
     <div class="btn-container">
-      <el-button type="primary" :disabled="formLoading" @click="dosubmit()"
+      <el-button
+        type="primary"
+        v-show="formData.length"
+        :disabled="formLoading"
+        :loading="btnLoading"
+        @click="dosubmit()"
         >提交</el-button
       >
     </div>
@@ -161,11 +169,11 @@ export default {
   name: "CustomPortrait",
   data() {
     return {
-      isDark: false,
       userLoading: true,
       formLoading: true,
+      btnLoading: false,
       userInfo: {},
-      formData: {},
+      formData: [],
     };
   },
   created() {
@@ -254,22 +262,44 @@ export default {
       };
     },
     dosubmit() {
-      // this.loading = true;
+      this.btnLoading = true;
       const customPortrait = this.formData.map((item) => ({
         id: item.id,
         labelContent: JSON.stringify(item.value),
       }));
       console.log("addCustomPortrait", customPortrait, this.userInfo.id);
-      this.$Messager.post(
-        MESSAGER_SENDER.CONTENT,
-        "addCustomPortrait",
-        {
-          customPortrait,
-          customerAccount: this.userInfo.id,
-        },
-        undefined,
-        window.top
-      );
+      this.$Messager
+        .post(
+          MESSAGER_SENDER.CONTENT,
+          "addCustomPortrait",
+          {
+            customPortrait,
+            customerAccount: this.userInfo.id,
+          },
+          undefined,
+          window.top
+        )
+        .subscribe(
+          (e) => {
+            console.log("addCustomPortrait callback", e);
+            const { code, message } = e || {};
+            const type = code === 200 ? "success" : "error";
+            this.$message({
+              showClose: true,
+              message,
+              type,
+            });
+            this.btnLoading = false;
+          },
+          () => {
+            this.$message({
+              showClose: true,
+              message: "出错了",
+              type: "error",
+            });
+            this.btnLoading = false;
+          }
+        );
     },
   },
 };
@@ -278,93 +308,106 @@ export default {
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
 @mixin zy-scrollbar-for-chrome {
-  overflow: auto;
-  &::-webkit-scrollbar {
-    width: 5px;
-    height: 1px;
-  }
-  &::-webkit-scrollbar-thumb {
-    border-radius: 10px;
-    background: #ccc;
-    -webkit-box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
-    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
-  }
+    overflow: auto;
+    &::-webkit-scrollbar {
+        width: 5px;
+        height: 1px;
+    }
+    &::-webkit-scrollbar-thumb {
+        border-radius: 10px;
+        background: #ccc;
+        -webkit-box-shadow: inset 0 0 5px rgba(0, 0, 0, .2);
+                box-shadow: inset 0 0 5px rgba(0, 0, 0, .2);
+    }
 }
 .custom-portrait {
-  display: flex;
-  overflow: hidden;
-  flex-direction: column;
-  &.dark {
-    color: #f1f1f1;
-  }
-  .user-info {
-    font-size: 16px;
-    font-weight: 600;
-    height: 100px;
-
     display: flex;
-
-    box-sizing: border-box;
-    padding: 20px;
-
-    color: #606266;
-
-    align-items: stretch;
-    flex-shrink: 0;
-    &-right {
-      display: flex;
-      flex-direction: column;
-      flex: 1;
-
-      box-sizing: border-box;
-      padding: 0 10px 0 5px;
-
-      justify-content: space-around;
-      align-items: flex-start;
+    overflow: hidden;
+    flex-direction: column;
+    &.dark {
+        color: #f1f1f1;
     }
-    &-avatar {
-      overflow: hidden;
-
-      width: 60px;
-      height: 60px;
-      margin-right: 10px;
-
-      border-radius: 100%;
-      background: #ccc;
-      img,
-      svg {
-        display: block;
-
-        width: 100%;
-        height: 100%;
-      }
-    }
-  }
-  .form-info {
-    @include zy-scrollbar-for-chrome;
-
-    overflow: auto;
-    flex: 1;
-
-    box-sizing: border-box;
-    padding: 20px;
-    &-item {
-      text-align: left;
-      &:not(:nth-child(1)) {
-        margin-top: 15px;
-      }
-      &-label {
-        font-size: 14px;
+    .user-info {
+        font-size: 16px;
         font-weight: 600;
 
-        margin-bottom: 8px;
+        display: flex;
 
-        color: #42b983;
-      }
+        box-sizing: border-box;
+        height: 100px;
+        padding: 20px;
+
+        color: #606266;
+
+        align-items: stretch;
+        flex-shrink: 0;
+        &-right {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+
+            box-sizing: border-box;
+            padding: 0 10px 0 5px;
+
+            justify-content: space-around;
+            align-items: flex-start;
+        }
+        &-avatar {
+            overflow: hidden;
+
+            width: 60px;
+            height: 60px;
+            margin-right: 10px;
+
+            border-radius: 100%;
+            background: #ccc;
+            img,
+            svg {
+                display: block;
+
+                width: 100%;
+                height: 100%;
+            }
+        }
     }
-  }
-  .btn-container {
-    padding: 10px;
-  }
+    .form-info {
+        @include zy-scrollbar-for-chrome;
+
+        overflow: auto;
+        flex: 1;
+
+        box-sizing: border-box;
+        padding: 20px;
+        &-item {
+            text-align: left;
+            &:not(:nth-child(1)) {
+                margin-top: 15px;
+            }
+            &-label {
+                font-size: 14px;
+                font-weight: 600;
+
+                margin-bottom: 8px;
+
+                color: #42b983;
+            }
+        }
+        &-empty {
+            font-size: 16px;
+
+            display: flex;
+
+            height: 100%;
+
+            color: #606266;
+
+            align-items: center;
+            justify-content: center;
+        }
+    }
+    .btn-container {
+        padding: 10px;
+    }
 }
+
 </style>

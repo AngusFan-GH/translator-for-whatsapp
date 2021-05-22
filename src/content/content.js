@@ -138,8 +138,8 @@ function injectIframeContainer() {
     SendCustomInfo$.subscribe(([_, e]) => $Messager.post(MESSAGER_SENDER.POPUP, 'getCustomInfo', e, IFRAME_URL, $iframeContaienr[0].contentWindow));
     SendCurrentFriendChange$.subscribe(([_, e]) => $Messager.post(MESSAGER_SENDER.POPUP, 'currentFriendChange', e, IFRAME_URL, $iframeContaienr[0].contentWindow));
 
-    $Messager.receive(MESSAGER_SENDER.POPUP, 'addCustomPortrait').subscribe(({ title, message }) => {
-        $Messager.send(MESSAGER_SENDER.BACKGROUND, title, message);
+    $Messager.receive(MESSAGER_SENDER.POPUP, 'addCustomPortrait').subscribe(({ title, message, id }) => {
+        $Messager.send(MESSAGER_SENDER.BACKGROUND, title, message).subscribe(e => $Messager.replay(id).post(MESSAGER_SENDER.POPUP, title, e, IFRAME_URL, $iframeContaienr[0].contentWindow));
     });
 }
 

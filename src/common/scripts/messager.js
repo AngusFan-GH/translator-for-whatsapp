@@ -102,9 +102,9 @@ class Messager {
                 const data = JSON.stringify({ id, from, to: MESSAGER_SENDER.CONTENT, title, message });
                 chrome.runtime.sendMessage(window.extensionId, data);
             },
-            post(to, title, message, targetOrigin = URL) {
+            post(to, title, message, targetOrigin = URL, otherWindow) {
                 const data = JSON.stringify({ id, from, to, title, message });
-                window.postMessage(data, targetOrigin);
+                otherWindow ? otherWindow.postMessage(data, targetOrigin) : window.postMessage(data, targetOrigin);
             }
         };
     }
