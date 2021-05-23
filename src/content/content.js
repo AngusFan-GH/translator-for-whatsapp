@@ -12,8 +12,6 @@ const IFRAME_URL = process.env.NODE_ENV === 'production' ?
     `chrome-extension://${chrome.runtime.id}/popup/index.html` :
     'http://localhost:8080/';
 
-console.log(process.env.NODE_ENV);
-
 const EnterChatPage$ = new Subject();
 const $Messager = new Messager(MESSAGER_SENDER.CONTENT);
 const PopupLoaded$ = new Subject();
@@ -62,7 +60,6 @@ function listenEnterChatPage() {
 }
 
 function injectIframeContainerBtn() {
-
     combineLatest(PopupLoaded$, EnterChatPage$).subscribe(() => {
         const $openIframeContainerBtn = $(`<div>
             <div class="_2n-zq">
@@ -91,11 +88,13 @@ function injectIframeContainerBtn() {
             $iframeContaienr.show();
             $closeIframeContainerBtn.show();
             $openIframeContainerBtn.hide();
+            $Messager.post(MESSAGER_SENDER.POPUP, 'toggleDisplay', true, IFRAME_URL, $iframeContaienr[0].contentWindow);
         });
         fromEvent($closeIframeContainerBtn, 'click').subscribe(() => {
             $iframeContaienr.hide();
             $closeIframeContainerBtn.hide();
             $openIframeContainerBtn.show();
+            $Messager.post(MESSAGER_SENDER.POPUP, 'toggleDisplay', false, IFRAME_URL, $iframeContaienr[0].contentWindow);
         });
         const $btnContainer = $($('#main header').children("div:last-child").children().get(0));
         $btnContainer.append($openIframeContainerBtn.hide());

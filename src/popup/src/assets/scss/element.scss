@@ -1,0 +1,8 @@
+@import 'style.scss';
+
+.el-message {
+    min-width: 80%;
+}
+.el-textarea textarea {
+    @include zy-scrollbar-for-chrome;
+}

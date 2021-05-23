@@ -5,7 +5,7 @@ import Messager from '../../common/scripts/messager';
 import { MESSAGER_SENDER } from '../../common/modal/index';
 import router from './router';
 import App from './App.vue';
-import './assets/style.scss';
+import './assets/scss/element.scss';
 
 Vue.config.productionTip = false;
 Vue.prototype.$Messager = new Messager(MESSAGER_SENDER.POPUP);
