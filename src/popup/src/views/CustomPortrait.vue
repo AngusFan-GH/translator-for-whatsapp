@@ -264,9 +264,12 @@ export default {
               if (res.labelType === "Checkbox") {
                 res.value = [];
               }
-              res.value = res.labelContent
-                ? JSON.parse(res.labelContent)
-                : res.value;
+              if (res.labelContent) {
+                res.value =
+                  JSON.parse(res.labelContent) !== null
+                    ? JSON.parse(res.labelContent)
+                    : undefined;
+              }
               return res;
             });
           this.formLoading = false;
@@ -299,7 +302,7 @@ export default {
       this.btnLoading = true;
       const customPortrait = this.formData.map((item) => ({
         id: item.id,
-        labelContent: JSON.stringify(item.value || null),
+        labelContent: JSON.stringify(item.value == null ? null : item.value),
       }));
       console.log("addCustomPortrait", customPortrait, this.userInfo.id);
       this.$Messager
@@ -342,106 +345,105 @@ export default {
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
 @mixin zy-scrollbar-for-chrome {
-    overflow: auto;
-    &::-webkit-scrollbar {
-        width: 5px;
-        height: 1px;
-    }
-    &::-webkit-scrollbar-thumb {
-        border-radius: 10px;
-        background: #ccc;
-        -webkit-box-shadow: inset 0 0 5px rgba(0, 0, 0, .2);
-                box-shadow: inset 0 0 5px rgba(0, 0, 0, .2);
-    }
+  overflow: auto;
+  &::-webkit-scrollbar {
+    width: 5px;
+    height: 1px;
+  }
+  &::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+    background: #ccc;
+    -webkit-box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
+  }
 }
 .custom-portrait {
+  display: flex;
+  overflow: hidden;
+  flex-direction: column;
+  &.dark {
+    color: #f1f1f1;
+  }
+  .user-info {
+    font-size: 16px;
+    font-weight: 600;
+
     display: flex;
-    overflow: hidden;
-    flex-direction: column;
-    &.dark {
-        color: #f1f1f1;
+
+    box-sizing: border-box;
+    height: 100px;
+    padding: 20px;
+
+    color: #606266;
+
+    align-items: stretch;
+    flex-shrink: 0;
+    &-right {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+
+      box-sizing: border-box;
+      padding: 0 10px 0 5px;
+
+      justify-content: space-around;
+      align-items: flex-start;
     }
-    .user-info {
-        font-size: 16px;
+    &-avatar {
+      overflow: hidden;
+
+      width: 60px;
+      height: 60px;
+      margin-right: 10px;
+
+      border-radius: 100%;
+      background: #ccc;
+      img,
+      svg {
+        display: block;
+
+        width: 100%;
+        height: 100%;
+      }
+    }
+  }
+  .form-info {
+    @include zy-scrollbar-for-chrome;
+
+    overflow: auto;
+    flex: 1;
+
+    box-sizing: border-box;
+    padding: 20px;
+    &-item {
+      text-align: left;
+      &:not(:nth-child(1)) {
+        margin-top: 15px;
+      }
+      &-label {
+        font-size: 14px;
         font-weight: 600;
 
-        display: flex;
+        margin-bottom: 8px;
 
-        box-sizing: border-box;
-        height: 100px;
-        padding: 20px;
-
-        color: #606266;
-
-        align-items: stretch;
-        flex-shrink: 0;
-        &-right {
-            display: flex;
-            flex-direction: column;
-            flex: 1;
-
-            box-sizing: border-box;
-            padding: 0 10px 0 5px;
-
-            justify-content: space-around;
-            align-items: flex-start;
-        }
-        &-avatar {
-            overflow: hidden;
-
-            width: 60px;
-            height: 60px;
-            margin-right: 10px;
-
-            border-radius: 100%;
-            background: #ccc;
-            img,
-            svg {
-                display: block;
-
-                width: 100%;
-                height: 100%;
-            }
-        }
+        color: #42b983;
+      }
     }
-    .form-info {
-        @include zy-scrollbar-for-chrome;
+    &-empty {
+      font-size: 16px;
 
-        overflow: auto;
-        flex: 1;
+      display: flex;
 
-        box-sizing: border-box;
-        padding: 20px;
-        &-item {
-            text-align: left;
-            &:not(:nth-child(1)) {
-                margin-top: 15px;
-            }
-            &-label {
-                font-size: 14px;
-                font-weight: 600;
+      height: 100%;
 
-                margin-bottom: 8px;
+      color: #606266;
 
-                color: #42b983;
-            }
-        }
-        &-empty {
-            font-size: 16px;
-
-            display: flex;
-
-            height: 100%;
-
-            color: #606266;
-
-            align-items: center;
-            justify-content: center;
-        }
+      align-items: center;
+      justify-content: center;
     }
-    .btn-container {
-        padding: 10px;
-    }
+  }
+  .btn-container {
+    padding: 10px;
+  }
 }
-
 </style>
