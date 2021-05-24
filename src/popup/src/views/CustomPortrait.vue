@@ -203,6 +203,7 @@ export default {
       btnLoading: false,
       userInfo: {},
       formData: [],
+      subs: [],
     };
   },
   created() {
@@ -223,23 +224,25 @@ export default {
       );
     },
     listenToggleDisplay() {
-      this.$Messager
+      const toggleDisplaySub = this.$Messager
         .receive(MESSAGER_SENDER.CONTENT, "toggleDisplay")
         .subscribe((e) => {
           this.isShow = !!e.message;
         });
+      this.subs.push(toggleDisplaySub);
     },
     listenChangeCurrentFriend() {
-      this.$Messager
+      const currentFriendChangeSub = this.$Messager
         .receive(MESSAGER_SENDER.CONTENT, "currentFriendChange")
         .subscribe((e) => {
           this.userLoading = true;
           this.formLoading = true;
           console.log("currentFriendChange", e);
         });
+      this.subs.push(currentFriendChangeSub);
     },
     listenGetCustomPortraitFinish() {
-      this.$Messager
+      const getCustomPortraitFinishSub = this.$Messager
         .receive(MESSAGER_SENDER.CONTENT, "getCustomPortraitFinish")
         .subscribe((e) => {
           this.formData = (e.message || [])
@@ -286,15 +289,17 @@ export default {
           this.formLoading = false;
           console.log("getCustomPortraitFinish", this.formData);
         });
+      this.subs.push(getCustomPortraitFinishSub);
     },
     listenGetCustomInfo() {
-      this.$Messager
+      const getCustomInfoSub = this.$Messager
         .receive(MESSAGER_SENDER.CONTENT, "getCustomInfo")
         .subscribe((e) => {
           this.userInfo = e.message;
           this.userLoading = false;
           console.log("getCustomInfo", e.message);
         });
+      this.subs.push(getCustomInfoSub);
     },
     createComparisonFunction(propertyName) {
       return (object1, object2) => {
@@ -316,7 +321,7 @@ export default {
         labelContent: JSON.stringify(item.value == null ? null : item.value),
       }));
       console.log("addCustomPortrait", customPortrait, this.userInfo.id);
-      this.$Messager
+      const addCustomPortraitSub = this.$Messager
         .post(
           MESSAGER_SENDER.CONTENT,
           "addCustomPortrait",
@@ -348,7 +353,11 @@ export default {
             this.btnLoading = false;
           }
         );
+      this.subs.push(addCustomPortraitSub);
     },
+  },
+  destroyed() {
+    this.subs.forEach((sub) => sub && sub.unsubscribe());
   },
 };
 </script>

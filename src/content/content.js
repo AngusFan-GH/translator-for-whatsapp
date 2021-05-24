@@ -60,8 +60,8 @@ function listenEnterChatPage() {
 }
 
 function injectIframeContainerBtn() {
-    combineLatest(PopupLoaded$, EnterChatPage$).subscribe(() => {
-        const $openIframeContainerBtn = $(`<div>
+    combineLatest(PopupLoaded$.pipe(first()), EnterChatPage$).subscribe(() => {
+        const $openIframeContainerBtn = $(`<div class="iframe-container-btn">
             <div class="_2n-zq">
                 <div aria-disabled="false" role="button" tabindex="0" data-tab="8" title="打开辅助面板" aria-label="打开辅助面板">
                     <span class="panel-btn">
@@ -72,7 +72,7 @@ function injectIframeContainerBtn() {
                 </div>
             </div>
         </div>`);
-        const $closeIframeContainerBtn = $(`<div>
+        const $closeIframeContainerBtn = $(`<div class="iframe-container-btn">
             <div class="_2n-zq">
                 <div aria-disabled="false" role="button" tabindex="0" data-tab="8" title="关闭辅助面板" aria-label="关闭辅助面板">
                     <span class="panel-btn">

@@ -19,6 +19,7 @@ module.exports = {
     'comma-dangle': 'off',
     "max-len": ["error", { "ignorePattern": 'd="([\\s\\S]*?)"' }],
     "operator-linebreak": 'off',
-    "implicit-arrow-linebreak": 'off'
+    "implicit-arrow-linebreak": 'off',
+    'linebreak-style': 'off'
   },
 };
