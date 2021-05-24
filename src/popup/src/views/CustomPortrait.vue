@@ -262,9 +262,6 @@ export default {
                       {},
                       ...JSON.parse(res.dictItemValue)
                     );
-                    res.dictItemValue.template = res.dictItemValue.template
-                      ? res.dictItemValue.template.replace("value", "{value}")
-                      : "";
                     break;
                   default:
                     res.dictItemValue = JSON.parse(res.dictItemValue).map(
