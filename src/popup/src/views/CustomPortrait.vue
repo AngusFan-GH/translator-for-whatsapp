@@ -62,6 +62,7 @@
                   :placeholder="`请输入${item.labelField}`"
                   clearable
                   :disabled="btnLoading"
+                  @change="formValueChanged($event)"
                 ></el-input>
               </div>
               <div v-if="item.labelType === 'Radio'">
@@ -71,11 +72,15 @@
                   :label="radio.key"
                   :key="radio.key"
                   :disabled="btnLoading"
+                  @change="formValueChanged($event)"
                   >{{ radio.value }}</el-radio
                 >
               </div>
               <div v-if="item.labelType === 'Checkbox'">
-                <el-checkbox-group v-model="item.value">
+                <el-checkbox-group
+                  v-model="item.value"
+                  @change="formValueChanged($event)"
+                >
                   <el-checkbox
                     v-for="checkbox in item.dictItemValue"
                     :label="checkbox.key"
@@ -101,6 +106,7 @@
                     (item.dictItemValue && +item.dictItemValue.max) || Infinity
                   "
                   :disabled="btnLoading"
+                  @change="formValueChanged($event)"
                 ></el-input-number>
               </div>
               <div v-if="item.labelType === 'TimePicker'">
@@ -109,6 +115,7 @@
                   value-format="timestamp"
                   :placeholder="`请选择${item.labelField}`"
                   :disabled="btnLoading"
+                  @change="formValueChanged($event)"
                 >
                 </el-time-picker>
               </div>
@@ -119,6 +126,7 @@
                   value-format="timestamp"
                   :placeholder="`请选择${item.labelField}`"
                   :disabled="btnLoading"
+                  @change="formValueChanged($event)"
                 >
                 </el-date-picker>
               </div>
@@ -129,6 +137,7 @@
                   value-format="timestamp"
                   :placeholder="`请选择${item.labelField}`"
                   :disabled="btnLoading"
+                  @change="formValueChanged($event)"
                 >
                 </el-date-picker>
               </div>
@@ -138,6 +147,7 @@
                   :placeholder="`请选择${item.labelField}`"
                   clearable
                   :disabled="btnLoading"
+                  @change="formValueChanged($event)"
                 >
                   <el-option
                     v-for="select in item.dictItemValue"
@@ -155,6 +165,7 @@
                   :placeholder="`请输入${item.labelField}`"
                   v-model="item.value"
                   :disabled="btnLoading"
+                  @change="formValueChanged($event)"
                 >
                 </el-input>
               </div>
@@ -169,6 +180,7 @@
                     item.dictItemValue && item.dictItemValue.template
                   "
                   :disabled="btnLoading"
+                  @change="formValueChanged($event)"
                 ></el-rate>
               </div>
             </div>
@@ -179,7 +191,7 @@
       <div class="btn-container">
         <el-button
           type="primary"
-          v-show="formData.length"
+          v-show="formData.length && hasEdited"
           :disabled="formLoading"
           :loading="btnLoading"
           @click="dosubmit()"
@@ -197,6 +209,7 @@ export default {
   name: "CustomPortrait",
   data() {
     return {
+      hasEdited: false,
       isShow: true,
       userLoading: true,
       formLoading: true,
@@ -245,6 +258,7 @@ export default {
       const getCustomPortraitFinishSub = this.$Messager
         .receive(MESSAGER_SENDER.CONTENT, "getCustomPortraitFinish")
         .subscribe((e) => {
+          this.hasEdited = false;
           this.formData = (e.message || [])
             .sort(this.createComparisonFunction("serialNumber"))
             .map((item) => {
@@ -311,6 +325,10 @@ export default {
         return 0;
       };
     },
+    formValueChanged(e) {
+      console.log("formValueChanged", e);
+      this.hasEdited = true;
+    },
     dosubmit() {
       this.btnLoading = true;
       const customPortrait = this.formData.map((item) => ({
@@ -334,6 +352,7 @@ export default {
             console.log("addCustomPortrait callback", e);
             const { code, message } = e || {};
             const type = code === 200 ? "success" : "error";
+            this.hasEdited = code !== 200;
             this.$message({
               showClose: true,
               message,
