@@ -99,7 +99,7 @@ $(() => {
             <option value="BingTranslate">必应翻译</option>
             <option value="BaiduTranslate">百度翻译</option>
         </select>`));
-        const $textArea = $($copyableArea.children('div').get(1)).addClass('translate_area');
+        const $textArea = $($($($copyableArea.children('div').get(1)).children('div').get(0)).children('div').get(0)).addClass('translate_area');
         try {
             const { TranslationDisplayMode } = await Storager.get('TranslationDisplayMode');
             const $btn = $(`

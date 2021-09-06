@@ -59,6 +59,7 @@ class TranslatorManager {
     if (this.DETECT_LANGUAGE_CACHE[this.DEFAULT_TRANSLATOR][escape(text)]) {
       return Promise.resolve(this.DETECT_LANGUAGE_CACHE[this.DEFAULT_TRANSLATOR][escape(text)]);
     }
+    console.log('detect', this.TRANSLATORS, this.DEFAULT_TRANSLATOR);
     return this.TRANSLATORS[this.DEFAULT_TRANSLATOR].detect(text).then((res) => {
       this.DETECT_LANGUAGE_CACHE[this.DEFAULT_TRANSLATOR][escape(text)] = res;
       return Promise.resolve(res);
