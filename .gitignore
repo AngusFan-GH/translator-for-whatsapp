@@ -7,7 +7,7 @@
 
 # dependencies
 /node_modules
-
+/src/*/node_modules
 
 # IDE - VSCode
 .vscode/*
